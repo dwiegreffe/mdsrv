@@ -98,7 +98,7 @@ RUN apk update && apk upgrade && \
     apk add --no-cache bash git openssh
 
 
-RUN git clone git clone https://github.com/dwiegreffe/mdsrv.git
+RUN git clone https://github.com/dwiegreffe/mdsrv.git
 
 
 RUN \
