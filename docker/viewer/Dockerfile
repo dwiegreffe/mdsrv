@@ -102,12 +102,12 @@ RUN git clone git clone https://github.com/dwiegreffe/mdsrv.git
 
 
 RUN \
-        cd molstar && \
+        cd mdsrv && \
         npm install
 
 
 RUN \
-        cd molstar && \
+        cd mdsrv && \
         NODE_ENV=production npm run build
 
 
@@ -118,6 +118,6 @@ RUN    npm install -g forever
 
 EXPOSE 4242
 
-CMD cd molstar/build/viewer && http-server -p 4242
+CMD cd mdsrv/build/viewer && http-server -p 4242
 
 

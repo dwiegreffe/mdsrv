@@ -101,16 +101,16 @@ RUN git clone https://github.com/dwiegreffe/mdsrv.git
 
 
 RUN \
-        cd molstar && \
+        cd mdsrv && \
         npm install
 
 
 RUN \
-        cd molstar && \
+        cd mdsrv && \
         NODE_ENV=production npm run build
 
 
 EXPOSE 1337
 
-CMD  cd molstar && node lib/commonjs/extensions/remote-session/server/index.js --working-folder ./server --port 1337
+CMD  cd mdsrv && node lib/commonjs/extensions/remote-session/server/index.js --working-folder ./server --port 1337
 

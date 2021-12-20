@@ -12,15 +12,15 @@ MDsrv is a web tool for interactive and remote exploration of trajectories. Inte
 - Build Viewer:
 	- Go to folder docker/viewer
 	- Run the following command:
-	docker build --no-cache -t proteinvis/molstar-viewer .
+	docker build --no-cache -t proteinvis/mdsrv-viewer .
 	- Start the container:
-	docker run  -p 4242:4242   proteinvis/molstar-viewer
+	docker run  -p 4242:4242   proteinvis/mdsrv-viewer
 
 - Build Remote Server:
 	- Go to folder docker/server
 	- Run the following command:
-	docker build --no-cache -t proteinvis/molstar-remote .
+	docker build --no-cache -t proteinvis/mdsrv-remote .
 	- Start the container:
-	docker run  -p 1337:1337  -v /path/to/mdsrv/server:/molstar/server proteinvis/molstar-remote
+	docker run  -p 1337:1337  -v /path/to/mdsrv/server:/mdsrv/server proteinvis/mdsrv-remote
 
 Access the webservice at 127.0.0.1:4242
