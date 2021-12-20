@@ -1,0 +1,50 @@
+@import '../../mol-plugin-ui/skin/dark.scss';
+
+$expanded-plot-height:   162px;
+$plot-label-color: color-lower-contrast($font-color, 20%);
+$plot-height: 240px;
+$plot-left-label-width: 36px;
+$plot-path-color: color-lower-contrast(#ccd4e0, 5%);
+$plot-hover-color: color-lower-contrast(#e67e22, 5%);
+
+.msp-plot  {
+    position: relative;
+    height: $plot-height;
+    width: 100%;
+}
+
+.msp-plot-path-container {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: $plot-left-label-width;
+    right: 0;
+    height: $plot-height;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.msp-plot-path {
+    position: relative;
+    height: $plot-height;
+}
+
+.msp-plot-left-label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: $plot-left-label-width;
+    height: $plot-height;
+}
+
+.plot-label {
+    text-anchor: middle;
+    font-size: 12px;
+    stroke: none;
+    fill: $plot-label-color;
+}
+
+.plot-hover-label {
+    font-size: 12px;
+    fill: $font-color;
+}

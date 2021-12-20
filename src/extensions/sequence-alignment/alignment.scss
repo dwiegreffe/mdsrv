@@ -1,0 +1,37 @@
+@import '../../mol-plugin-ui/skin/dark.scss';
+@import '../../mol-plugin-ui/skin/base/variables.scss';
+
+$alignment-lable-width: 300px;
+
+.msp-alignment {
+    position: relative;
+    width: 100%;
+
+    .msp-alignment-wrapper {
+        display: flex;
+        font-size: 85%;
+        line-height: 180%;
+        font-family: "Courier New", monospace;
+        background: $msp-form-control-background;
+        width: 100%;
+    
+        .msp-alignment-label-container {
+            width: $alignment-lable-width;
+            background: $msp-form-control-background;
+        }
+        
+        .msp-alignment-sequence-container {
+            width: calc(100% - #{$alignment-lable-width} - 10px);
+            overflow-x: auto;
+            overflow-y: auto;
+            white-space: nowrap;
+        background: $msp-form-control-background;
+    
+        
+            .msp-alignment-sequence {
+                position: relative;
+                padding: 0px 10px 0px 10px !important;
+            }
+        }
+    }
+}

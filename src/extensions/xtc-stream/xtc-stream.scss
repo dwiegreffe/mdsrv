@@ -1,0 +1,34 @@
+@import '../../mol-plugin-ui/skin/dark.scss';
+@import '../../mol-plugin-ui/skin/base/variables.scss';
+
+.msp-url-refresh-wrap {
+    position: relative;
+    margin-top: 1px;
+    width: 100%;
+    height: $row-height;
+}
+
+.msp-url-refresh {
+    display: block;
+    position: absolute;
+    left: $control-label-width + $control-spacing;
+    left: 0;
+    top: 0;
+}
+
+.msp-url-refresh-wider {
+    margin-right: $row-height + 1px;
+}
+
+.msp-url-refresh-btn {
+    background: $default-background;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: $row-height;
+    padding: 0;
+}
+
+.msp-url-refresh-btn:hover {
+    background: color-lower-contrast($default-background, 20%);
+}
