@@ -1,7 +1,8 @@
 /**
- * Copyright (c) 2020 mol* contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2020-2021 mol* contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Alexander Rose <alexander.rose@weirdbyte.de>
+ * @author Michelle Kampfrath <kampfrath@informatik.uni-leipzig.de>
  */
 
 import { StructureElement, Unit } from '../../structure/structure';
@@ -13,7 +14,9 @@ export { AlignSequences };
 namespace AlignSequences {
     export type Input = {
         a: StructureElement.Loci.Element,
-        b: StructureElement.Loci.Element
+        b: StructureElement.Loci.Element,
+        as?: string,
+        bs?: string,
     }
     /** `a` and `b` contain matching pairs, i.e. `a.indices[0]` aligns with `b.indices[0]` */
     export type Result = {
@@ -22,7 +25,7 @@ namespace AlignSequences {
         score: number
     }
 
-    function createSeqIdIndicesMap(element: StructureElement.Loci.Element) {
+    export function createSeqIdIndicesMap(element: StructureElement.Loci.Element) {
         const seqIds = new Map<number, StructureElement.UnitIndex[]>();
         if (Unit.isAtomic(element.unit)) {
             const { label_seq_id } = element.unit.model.atomicHierarchy.residues;
@@ -57,7 +60,10 @@ namespace AlignSequences {
 
         const indicesA: StructureElement.UnitIndex[] = [];
         const indicesB: StructureElement.UnitIndex[] = [];
-        const { aliA, aliB, score } = align(seqA.code.toArray(), seqB.code.toArray(), options);
+
+        const { aliA, aliB, score } = (input.as && input.bs)
+            ? { aliA: input.as, aliB: input.bs, score: -1 }
+            : align(seqA.code.toArray(), seqB.code.toArray(), options);
 
         let seqIdxA = 0, seqIdxB = 0;
         for (let i = 0, il = aliA.length; i < il; ++i) {

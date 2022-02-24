@@ -1,7 +1,7 @@
 [
   {
     "timestamp": 1639483490792,
-    "id": "9f89ab6d-cffe-4c62-bbfb-e04d2d4a1d17",
+    "id": "9ddf37db-a249-4f6e-b542-9626b1cf6182",
     "name": "2zt9-4dg3 - Alignment",
     "description": "",
     "version": "3.0.0-dev.3",
@@ -9,24 +9,32 @@
   },
   {
     "timestamp": 1639483528916,
-    "id": "f77e13b6-00c8-4b2f-a752-3d7daf67526b",
-    "name": "md_1u19 - Trajectory Streaming",
+    "id": "80de2863-618b-4e4d-b811-316027fed991",
+    "name": "md_1u19 - Trajectory Streaming - Distance Line Plot",
     "description": "",
     "version": "3.0.0-dev.3",
     "isSticky": true
   },
   {
     "timestamp": 1639483579520,
-    "id": "3d3ab076-db05-40f2-872b-5a9a4fe2f6e9",
-    "name": "eq7_1_apo - Trajectory Streaming - Distance Line Plot",
+    "id": "b7871196-f9a2-40e0-86dc-ccc6c11c7304",
+    "name": "eq7_1_apo - Trajectory Streaming - Angle Line Plot",
     "description": "",
     "version": "3.0.0-dev.3",
     "isSticky": true
   },
   {
     "timestamp": 1639483762357,
-    "id": "307061fb-a961-46bd-855f-dbb63a761857",
-    "name": "md_1u19 - Trajectory - Distance Line Plot",
+    "id": "d462eb69-ca31-44c9-8d9b-42e159dc1f0e",
+    "name": "md_1u19 - Trajectory Local - Distance Line Plot",
+    "description": "",
+    "version": "3.0.0-dev.3",
+    "isSticky": true
+  },
+  {
+    "timestamp": 1640094217541,
+    "id": "f010cb1f-44ed-4938-8e56-610936224006",
+    "name": "Trajectory Stream 4.5GB XTC",
     "description": "",
     "version": "3.0.0-dev.3",
     "isSticky": true

@@ -16,14 +16,12 @@ import { ParamDefinition as PD } from '../../mol-util/param-definition';
 import { urlCombine } from '../../mol-util/url';
 import { PluginUIComponent, PurePluginUIComponent } from '../base';
 import { Button, ExpandGroup, IconButton, SectionHeader } from '../controls/common';
-import { Icon, SaveOutlinedSvg, GetAppSvg, OpenInBrowserSvg, WarningSvg, DeleteOutlinedSvg, AddSvg, ArrowUpwardSvg, SwapHorizSvg, ArrowDownwardSvg, RefreshSvg, CloudUploadSvg } from '../controls/icons';
+import { Icon, GetAppSvg, OpenInBrowserSvg, WarningSvg, DeleteOutlinedSvg, AddSvg, ArrowUpwardSvg, SwapHorizSvg, ArrowDownwardSvg, RefreshSvg, CloudUploadSvg } from '../controls/icons';
 import { ParameterControls } from '../controls/parameters';
 
 export class StateSnapshots extends PluginUIComponent<{}> {
     render() {
         return <div>
-            <SectionHeader icon={SaveOutlinedSvg} title='Plugin State' />
-
             <div style={{ marginBottom: '10px' }}>
                 <ExpandGroup header='Save Options' initiallyExpanded={false}>
                     <LocalStateSnapshotParams />

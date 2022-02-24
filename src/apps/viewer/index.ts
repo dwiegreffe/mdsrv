@@ -6,9 +6,8 @@
  */
 
 import { ANVILMembraneOrientation } from '../../extensions/anvil/behavior';
-import { CellPack } from '../../extensions/cellpack';
 import { DnatcoConfalPyramids } from '../../extensions/dnatco';
-import { G3DFormat, G3dProvider } from '../../extensions/g3d/format';
+import { G3dProvider } from '../../extensions/g3d/format';
 import { GeometryExport } from '../../extensions/geo-export';
 import { Mp4Export } from '../../extensions/mp4-export';
 import { PDBeStructureQualityReport } from '../../extensions/pdbe';
@@ -58,13 +57,13 @@ const CustomFormats = [
 ];
 
 const Extensions = {
-    'cellpack': PluginSpec.Behavior(CellPack),
+    // 'cellpack': PluginSpec.Behavior(CellPack),
     'dnatco-confal-pyramids': PluginSpec.Behavior(DnatcoConfalPyramids),
     'pdbe-structure-quality-report': PluginSpec.Behavior(PDBeStructureQualityReport),
     'rcsb-assembly-symmetry': PluginSpec.Behavior(RCSBAssemblySymmetry),
     'rcsb-validation-report': PluginSpec.Behavior(RCSBValidationReport),
     'anvil-membrane-orientation': PluginSpec.Behavior(ANVILMembraneOrientation),
-    'g3d': PluginSpec.Behavior(G3DFormat),
+    // 'g3d': PluginSpec.Behavior(G3DFormat),
     'mp4-export': PluginSpec.Behavior(Mp4Export),
     'geo-export': PluginSpec.Behavior(GeometryExport),
     'measurement-plot': PluginSpec.Behavior(MeasurementPlot),
@@ -128,10 +127,10 @@ export class Viewer {
                     controlsDisplay: o.layoutControlsDisplay,
                     regionState: {
                         bottom: 'full',
-                        left: o.collapseLeftPanel ? 'collapsed' : 'full',
-                        right: o.collapseRightPanel ? 'hidden' : 'full',
+                        left: window.matchMedia('(orientation: landscape)').matches ? 'collapsed' : 'full',
+                        right: window.matchMedia('(orientation: landscape)').matches ? 'hidden' : 'full',
                         top: 'full',
-                        extension: 'full'
+                        extension: 'hidden'
                     }
                 },
             },

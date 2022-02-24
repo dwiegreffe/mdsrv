@@ -115,3 +115,21 @@
         bottom: 0;
     }
 }
+
+///
+.msp-expand-panel-left {
+    transform: rotate(180deg);
+    left: $control-spacing;
+    top: calc(50% - #{$expand-panel-height}/2);
+}
+
+.msp-expand-panel-bottom {
+    transform: rotate(90deg);
+    left: calc(50% - #{$expand-panel-width}/2);
+    bottom: calc(-#{$expand-panel-height}/2 + #{$expand-panel-width}/2 + #{$control-spacing});
+}
+
+.msp-expand-panel-right {
+    right: $control-spacing;
+    top: calc(50% - #{$expand-panel-height}/2);
+}

@@ -125,3 +125,17 @@
     display: inline-block;
     color: $highlight-info-additional-font-color;
 }
+
+/* expand panels */
+.msp-expand-panel {
+    position: absolute;
+    width: $expand-panel-width;
+    height: $expand-panel-height;
+    border-radius: 5px;
+    background: $default-background;
+    opacity: 0.2;
+
+    .msp-btn:hover {
+        border-radius: 5px;
+    }
+}

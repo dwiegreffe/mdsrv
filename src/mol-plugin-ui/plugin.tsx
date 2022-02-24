@@ -21,6 +21,7 @@ import { PluginCommands } from '../mol-plugin/commands';
 import { PluginUIContext } from './context';
 import { OpenFiles } from '../mol-plugin-state/actions/file';
 import { Asset } from '../mol-util/assets';
+import { ExpandButton } from './controls/common';
 
 export class Plugin extends React.Component<{ plugin: PluginUIContext }, {}> {
     region(kind: 'left' | 'right' | 'bottom' | 'main', element: JSX.Element) {
@@ -192,6 +193,36 @@ export class DefaultViewport extends PluginUIComponent {
                 <LociLabels />
                 <Toasts />
             </div>
+            <ExpandPanelControls />
+        </>;
+    }
+}
+
+export class ExpandPanelControls extends PluginUIComponent {
+    set = (panel: string) => {
+        switch (panel) {
+            case 'bottom': PluginCommands.Layout.Update(this.plugin, { state: { regionState: { ...this.plugin.layout.state.regionState, extension: 'full' } } });
+                PluginCommands.Layout.Update(this.plugin, { state: { regionState: { ...this.plugin.layout.state.regionState, bottom: 'full' } } });
+                break;
+            case 'right': PluginCommands.Layout.Update(this.plugin, { state: { regionState: { ...this.plugin.layout.state.regionState, right: 'full' } } });
+                break;
+            case 'left': PluginCommands.Layout.Update(this.plugin, { state: { regionState: { ...this.plugin.layout.state.regionState, left: 'full' } } });
+                this.plugin.behaviors.layout.leftPanelTabName.next('root');
+                break;
+        }
+    };
+
+    render() {
+        return <>
+            {this.plugin.layout.state.regionState.extension === 'hidden' || this.plugin.layout.state.regionState.bottom === 'hidden'
+                ? <ExpandButton title='Expand Log/Extensions' toggle={() => this.set('bottom')} position='bottom' />
+                : null}
+            {this.plugin.layout.state.regionState.left !== 'full'
+                ? <ExpandButton title='Expand Left Panel' toggle={() => this.set('left')} position='left' />
+                : null}
+            {this.plugin.layout.state.regionState.right === 'hidden'
+                ? <ExpandButton title='Expand Structure Tools' toggle={() => this.set('right')} position='right' />
+                : null}
         </>;
     }
 }

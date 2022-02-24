@@ -1,3 +1,16 @@
+/**
+ * Copyright (c) 2020-2021 mol* contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * Adapted from NGL.
+ *
+ * @author David Sehnal <david.sehnal@gmail.com>
+ * @author Alexander Rose <alexander.rose@weirdbyte.de>
+ * @author Michelle Kampfrath <kampfrath@informatik.uni-leipzig.de>
+ */
+
+import * as fs from 'fs';
+
+// taken from /src/mol-io/reader/xtc/parser.ts
 const MagicInts = new Uint32Array([
     0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 10, 12, 16, 20, 25, 32, 40, 50, 64,
     80, 101, 128, 161, 203, 256, 322, 406, 512, 645, 812, 1024, 1290,
@@ -8,8 +21,10 @@ const MagicInts = new Uint32Array([
     4194304, 5284491, 6658042, 8388607, 10568983, 13316085, 16777216
 ]);
 
+// taken from /src/mol-io/reader/xtc/parser.ts
 export const FirstIdx = 9;
 
+// taken from /src/mol-io/reader/xtc/parser.ts
 namespace Decoder {
     export function sizeOfInt(size: number) {
         let num = 1;
@@ -139,10 +154,12 @@ namespace Decoder {
     }
 }
 
+// taken from /src/mol-io/reader/xtc/parser.ts
 function undefinedError() {
     throw new Error('(xdrfile error) Undefined error.');
 }
 
+// taken from /src/mol-io/reader/xtc/parser.ts
 export interface XtcFile {
     frames: { count: number, x: Float32Array, y: Float32Array, z: Float32Array }[],
     boxes: number[][],
@@ -151,40 +168,135 @@ export interface XtcFile {
     deltaTime: number
 }
 
-export function getOffsets(data: Uint8Array) {
-    const dv = new DataView(data.buffer, data.byteOffset);
+export async function getData(path: string) {
+    const stream = fs.createReadStream(path, { highWaterMark: 1024 * 1024 * 1024 });
 
-    let offset = 0;
+    return new Promise<number[]>((resolve, reject) => {
+        let restData: Uint8Array = new Uint8Array();
+        let globalOffset = 0;
+        const offsets: number[] = [];
+
+        stream.on('data', (chunk: Buffer) => {
+            const data: Uint8Array = concatAll([restData, new Uint8Array(chunk, chunk.byteOffset)]);
+            const result = getOffsets(data, globalOffset);
+
+            if (result.restOffset === 0) {
+                offsets.push(...result.finishedOffsets);
+                globalOffset = result.globalOffset;
+                restData = new Uint8Array();
+            } else {
+                offsets.push(...result.finishedOffsets);
+                globalOffset = result.globalOffset;
+                restData = data.slice(result.restOffset);
+            }
+        });
+
+        stream.on('end', () => {
+            resolve(offsets);
+        });
+
+        stream.on('error', error => {
+            reject(error);
+        });
+    });
+}
+
+type FrameResult = {
+    finishedOffsets: number[],
+    restOffset: number,
+    globalOffset: number
+}
+
+// adapted from /src/mol-io/reader/xtc/parser.ts
+export function getOffsets(data: Uint8Array, g: number): FrameResult {
+    const dv = new DataView(data.buffer, data.byteOffset);
+    let globalOffset = g;
+    let localOffset = 0;
     const offsetArray: number[] = [];
 
     while (true) {
-        offsetArray.push(offset);
+        let frameOffset = 0;
+        try {
+            const natoms = dv.getInt32(localOffset + frameOffset + 4);
+            frameOffset += 52;
 
-        const natoms = dv.getInt32(offset + 4);
-        offset += 12;
-        offset += 4;
-        offset += 36;
-
-        if (natoms <= 9) { // no compression
-            for (let i = 0; i < natoms / 3; ++i) {
-                offset += 4;
+            if (natoms <= 9) { // no compression
+                for (let i = 0; i < natoms / 3; ++i) {
+                    frameOffset += 4;
+                }
+            } else {
+                frameOffset += 36;
+                const adz = Math.ceil(dv.getInt32(localOffset + frameOffset) / 4) * 4;
+                frameOffset += 4;
+                frameOffset += adz;
             }
-        } else {
-            offset += 4;
-            offset += 4;
-            offset += 24;
-            offset += 4;
-            const adz = Math.ceil(dv.getInt32(offset) / 4) * 4;
-            offset += 4;
-            offset += adz;
+        } catch (e) {
+            return {
+                finishedOffsets: offsetArray,
+                restOffset: localOffset,
+                globalOffset: globalOffset
+            };
         }
-        if (offset >= data.length) break;
-    }
 
-    return offsetArray;
+        if (localOffset + frameOffset > dv.byteLength) {
+            return {
+                finishedOffsets: offsetArray,
+                restOffset: localOffset,
+                globalOffset: globalOffset
+            };
+        }
+
+        offsetArray.push(globalOffset);
+        localOffset += frameOffset;
+        globalOffset += frameOffset;
+
+        if (localOffset + frameOffset === dv.byteLength) {
+            return {
+                finishedOffsets: offsetArray,
+                restOffset: 0,
+                globalOffset: globalOffset
+            };
+        }
+    }
 }
 
-export function getFrameFile(data: Uint8Array, frameOffset: number) {
+export function concatAll(arrays: Uint8Array[]) {
+    let totalLength = 0;
+    for (const arr of arrays) {
+        totalLength += arr.length;
+    }
+    const result = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const arr of arrays) {
+        result.set(arr, offset);
+        offset += arr.length;
+    }
+    return result;
+}
+
+export function getFrameData(path: string, start: number, end: number) {
+    const stream = fs.createReadStream(path, { start, end });
+
+    return new Promise<XtcFile>((resolve, reject) => {
+        let data: Uint8Array = new Uint8Array();
+
+        stream.on('data', (chunk: Buffer) => {
+            data = concatAll([data, new Uint8Array(chunk, chunk.byteOffset)]);
+        });
+
+        stream.on('end', () => {
+            const file = getFrameFile(data);
+            resolve(file);
+        });
+
+        stream.on('error', error => {
+            reject(error);
+        });
+    });
+}
+
+// adapted from /src/mol-io/reader/xtc/parser.ts
+export function getFrameFile(data: Uint8Array) {
     const dv = new DataView(data.buffer, data.byteOffset);
 
     const f: XtcFile = {
@@ -206,7 +318,7 @@ export function getFrameFile(data: Uint8Array, frameOffset: number) {
     const thiscoord = [0.1, 0.1, 0.1];
     const prevcoord = [0.1, 0.1, 0.1];
 
-    let offset = frameOffset;
+    let offset = 0;
     const buf = Decoder.buf;
     // const buf2 = new Uint32Array(buf.buffer);
 

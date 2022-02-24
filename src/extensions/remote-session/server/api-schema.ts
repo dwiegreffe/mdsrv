@@ -3,7 +3,7 @@
  *
  * @author David Sehnal <david.sehnal@gmail.com>
  * @author Michelle Kampfrath <kampfrath@informatik.uni-leipzig.de>
- * 
+ *
  * adapted from /src/servers/plugin-state/api-schema.ts
  */
 
@@ -170,7 +170,7 @@ export function getSchema(config: Config) {
                     },
                 }
             },
-            [mapPath(`get/trajectory/{id}/frame/offset/{offset}`)]: {
+            [mapPath(`get/trajectory/{id}/frame/offset/{start}/{end}`)]: {
                 get: {
                     tags: ['General'],
                     summary: 'Returns an XTCFile for a single frame of a trajectory with the given id.',
@@ -185,9 +185,17 @@ export function getSchema(config: Config) {
                             style: 'simple'
                         },
                         {
-                            name: 'offset',
+                            name: 'start',
                             in: 'path',
-                            description: `Start bit for reading.`,
+                            description: `Start bit for reading this frame.`,
+                            required: true,
+                            schema: { type: 'string' },
+                            style: 'simple'
+                        },
+                        {
+                            name: 'end',
+                            in: 'path',
+                            description: `Start bit of next frame.`,
                             required: true,
                             schema: { type: 'string' },
                             style: 'simple'

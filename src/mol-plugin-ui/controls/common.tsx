@@ -6,7 +6,7 @@
 
 import * as React from 'react';
 import { Color } from '../../mol-util/color';
-import { Icon, ArrowRightSvg, ArrowDropDownSvg, RemoveSvg, AddSvg } from './icons';
+import { Icon, ArrowRightSvg, ArrowDropDownSvg, RemoveSvg, AddSvg, ArrowBackIosSvg } from './icons';
 
 export type ColorAccent = 'cyan' | 'red' | 'gray' | 'green' | 'purple' | 'blue' | 'orange'
 
@@ -214,10 +214,24 @@ export class ExpandableControlRow extends React.Component<{
     }
 }
 
-export function SectionHeader(props: { icon?: React.FC, title: string | JSX.Element, desc?: string, accent?: ColorAccent }) {
-    return <div className={`msp-section-header${props.accent ? ' msp-transform-header-brand-' + props.accent : ''}` }>
-        {props.icon && <Icon svg={props.icon} />}
-        {props.title} <small>{props.desc}</small>
+export function SectionHeader(props: { icon?: React.FC, title: string, desc?: string, accent?: ColorAccent, toggle?: () => void }) {
+    return <Button
+        icon={props.icon ? props.icon : void 0}
+        className={`msp-section-header${props.accent ? ' msp-transform-header-brand-' + props.accent : ''}`}
+        onClick={props.toggle}
+    >
+        {props.title} {props.desc ? <small>{props.desc}</small> : ''}
+    </Button>;
+}
+
+export function ExpandButton(props: {title: string, toggle: () => void, position: string}) {
+    return <div className={`msp-expand-panel msp-expand-panel-${props.position}`}>
+        <Button
+            icon={ArrowBackIosSvg}
+            style={{ height: '100%', background: 'transparent', padding: 0 }}
+            title={props.title}
+            onClick={props.toggle}
+        />
     </div>;
 }
 

@@ -17,7 +17,8 @@ export class Slider extends React.Component<{
     onChange: (v: number) => void,
     onChangeImmediate?: (v: number) => void,
     disabled?: boolean,
-    onEnter?: () => void
+    onEnter?: () => void,
+    textInput?: boolean
 }, { isChanging: boolean, current: number }> {
 
     state = { isChanging: false, current: 0 };
@@ -60,17 +61,19 @@ export class Slider extends React.Component<{
     render() {
         let step = this.props.step;
         if (step === void 0) step = 1;
+        let textInput = this.props.textInput;
+        if (textInput === void 0) textInput = true;
         return <div className='msp-slider'>
-            <div>
+            <div style={textInput ? void 0 : { width: '100%' }}>
                 <SliderBase min={this.props.min} max={this.props.max} step={step} value={this.state.current} disabled={this.props.disabled}
                     onBeforeChange={this.begin}
                     onChange={this.updateCurrent as any} onAfterChange={this.end as any} />
             </div>
-            <div>
+            { textInput && <div>
                 <TextInput numeric delayMs={50}
                     value={this.state.current} blurOnEnter={true} onBlur={this.onManualBlur}
                     isDisabled={this.props.disabled} onChange={this.updateManually} />
-            </div>
+            </div>}
         </div>;
     }
 }

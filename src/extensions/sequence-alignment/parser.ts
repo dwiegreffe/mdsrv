@@ -8,7 +8,7 @@ import { ReaderResult as Result } from '../../mol-io/reader/result';
 import { Task } from '../../mol-task';
 
 export interface ClustalFile {
-    alignment: string,
+    conservation: string,
     sequences: string[],
     chains: string[],
 }
@@ -16,7 +16,7 @@ export interface ClustalFile {
 async function parse(data: string) {
 
     const f: ClustalFile = {
-        alignment: '',
+        conservation: '',
         sequences: [],
         chains: []
     };
@@ -24,49 +24,116 @@ async function parse(data: string) {
     const lines = data.split('\n');
 
     // check if clustal file
-    if (lines[0].split(' ')[0].toLowerCase() !== ('clustal' || 'clustalw')) return f;
+    const header = lines[0].split(' ')[0].toLowerCase();
+    if (header !== 'clustal' && header !== 'clustalw') {
+        throw new Error('Wrong file header');
+    }
 
-    let count = 1;
-    let block: string[] = [];
-    let firstBlock = true;
+    // empty lines after header
+    let lineCount = 1;
+    while (lineCount < lines.length && lines[lineCount].length === 0) {
+        lineCount++;
+    }
 
-    while (count < lines.length) {
-        // empty line
-        if (lines[count].length === 0) {
-            // lines before not empty
-            if (block.length > 0) {
-                let last = 0;
-                for (let i = 0; i < block.length; i++) {
-                    // alignment line
-                    if (i === block.length - 1) {
-                        const alignment = block[i].slice(-last);
-                        if (firstBlock) {
-                            f.alignment = f.alignment.concat(alignment);
-                        } else {
-                            f.alignment = f.alignment.concat(alignment);
-                        }
-                    } else {
-                        const line = block[i].replace(/\s+/g, ' ').split(' ');
-                        last = line[1].length;
-                        if (firstBlock) {
-                            f.chains.push(line[0]);
-                            f.sequences.push(line[1]);
-                        } else {
-                            f.sequences[i] = f.sequences[i].concat(line[1]);
-                        }
-                    }
+    // id, sequence, conservation of current block
+    let cId: string[] = [];
+    let cSeq: string[] = [];
+    let cConservation: string = '';
+    // start and end offset of the sequence for the current block
+    let start = -1;
+    let end = -1;
+
+    // final id, sequence, conservation
+    const ids: string[] = [];
+    const seq: string[] = [];
+    let conservation: string = '';
+
+    while (lineCount < lines.length) {
+        const line = lines[lineCount];
+
+        if (line[0] !== ' ' && line.length !== 0 && line.trim()) {
+            // line with id and sequence
+            const fields = line.replace(/\s+/g, ' ').split(' ');
+            if (fields.length < 2 || fields.length > 3) throw Error(`Could not parse line ${lineCount + 1}: \n ${line}`);
+
+            cId.push(fields[0]);
+            cSeq.push(fields[1]);
+
+            start = line.indexOf(fields[1]);
+            end = start + fields[1].length;
+
+            // with count on end of the line
+            if (fields.length === 3) {
+                let amount = -1;
+                try {
+                    amount = parseInt(fields[2]);
+                } catch (e) {
+                    console.log(e, `Could not parse line ${lineCount + 1}: \n ${line}`);
                 }
-                block = [];
-                if (firstBlock) {
-                    firstBlock = false;
+                const index = ids.indexOf(fields[0]);
+                const before = index !== -1 ? seq[index].replace(/-/g, '').length : 0;
+                if (amount !== (fields[1].replace(/-/g, '').length + before)) {
+                    throw Error(`Could not parse line ${lineCount + 1}: \n ${line}`);
                 }
             }
-        } else {
-            // not empty line
-            block.push(lines[count]);
+        } else if (line[0] === ' ' || line.length === 0) {
+            // empty line or conservation line
+            if (start !== -1 && end !== -1) {
+                // conservation line
+                // if sequences have the same length
+                for (const s of cSeq) {
+                    if (s.length !== cSeq[0].length) throw Error('Could not parse file');
+                }
+                // if number of ids matched number of sequences
+                if (cId.length !== cSeq.length) throw Error('Could not parse file');
+
+                if (line[0] === ' ') {
+                    // conservation line has symbols
+                    cConservation = line.substring(start, end);
+                    // if conservation line has symbols before or after degree of conservation
+                    if (line.substring(0, start).trim() || line.substring(end).trim()) throw Error('Could not parse file');
+                    // if conservation line does not have the same length as the sequences
+                    if (cConservation.length !== cSeq[0].length) throw Error('Could not parse file');
+                } else {
+                    // conservation line is empty
+                    while (cConservation.length < cSeq[0].length) {
+                        cConservation += ' ';
+                    }
+                }
+
+                if (ids.length !== 0 && seq.length !== 0 && conservation.length !== 0) {
+                    // not first block
+                    if (ids.length !== cId.length && seq.length !== cSeq.length) throw Error('Could not parse file');
+                    for (let i = 0; i < cSeq.length; i++) {
+                        seq[i] = seq[i].concat(cSeq[i]);
+                    }
+                    conservation += cConservation;
+                } else if (ids.length === 0 && seq.length === 0 && conservation.length === 0) {
+                    // first block
+                    for (let i = 0; i < cId.length; i++) {
+                        ids.push(cId[i]);
+                        seq.push(cSeq[i]);
+                    }
+                    conservation += cConservation;
+                } else {
+                    throw Error('Could not parse file');
+                }
+
+                // reset all variable for next block
+                start = -1;
+                end = -1;
+                cId = [];
+                cSeq = [];
+                cConservation = '';
+            }
         }
-        count++;
+
+        lineCount++;
     }
+
+    f.conservation = conservation;
+    f.chains = ids;
+    f.sequences = seq;
 
     return f;
 }

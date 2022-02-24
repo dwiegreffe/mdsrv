@@ -380,6 +380,8 @@
     position: absolute;
     left: $control-spacing;
     top: $control-spacing;
+    right: calc(#{$control-spacing}*2 + 32px + 18px + 11px);
+    display: flex;
 
     .msp-traj-controls {
         line-height: $row-height;
@@ -394,6 +396,46 @@
             font-size: 85%;
             display: inline-block;
         }
+    }
+
+    .msp-traj-play {
+        height: 32px;
+        float: left;
+
+        button {
+            padding: 0;
+            text-align: center;
+            width: $row-height;
+            position: relative;
+    
+            &:focus {
+                border: 1px solid;
+                border-radius: 5px;
+                border-color: $default-background;
+                color: $color-accent-red;
+                background-color: transparent;
+    
+                &:hover {
+                    background-color: color-increase-contrast($msp-form-control-background, 5%);
+                    color: $color-accent-red;
+                }
+            }
+    
+            border: 1px solid;
+            border-radius: 5px;
+            border-color: $default-background;
+            color: $color-accent-red;
+    
+            &:hover {
+                color: $color-accent-red;
+            }
+        }
+    }
+
+    .msp-traj-progress {
+        position: relative;
+        height: 32px;
+        flex-grow: 1;
     }
 
     .msp-state-snapshot-viewport-controls {

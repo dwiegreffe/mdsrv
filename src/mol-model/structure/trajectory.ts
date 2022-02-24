@@ -55,8 +55,9 @@ export class XtcTrajectoryStream implements Trajectory {
     readonly representative: Model;
 
     private async getCoordinates(ctx: RuntimeContext, i: number): Promise<Coordinates> {
-        const offset = this.frameStarts[i];
-        const url = urlCombine(this.url, `frame/offset/${offset}`);
+        const start = this.frameStarts[i];
+        const end = (i === this.frameCount - 1) ? Infinity : this.frameStarts[i + 1];
+        const url = urlCombine(this.url, `frame/offset/${start}/${end}`);
         const file: XtcFile = await this.plugin.runTask(this.plugin.fetch({ url, type: 'json' }));
         return coordinatesFromXtc(file).runInContext(ctx);
     }

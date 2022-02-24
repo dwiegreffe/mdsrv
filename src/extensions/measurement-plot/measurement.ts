@@ -4,7 +4,7 @@
  * @author David Sehnal <david.sehnal@gmail.com>
  * @author Alexander Rose <alexander.rose@weirdbyte.de>
  * @author Michelle Kampfrath <kampfrath@informatik.uni-leipzig.de>
- * 
+ *
  * parts adapted from /src/mol-model/structure/structure/element/loci
  */
 

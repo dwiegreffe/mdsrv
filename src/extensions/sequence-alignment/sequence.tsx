@@ -4,7 +4,7 @@
  * @author Alexander Rose <alexander.rose@weirdbyte.de>
  * @author David Sehnal <david.sehnal@gmail.com>
  * @author Michelle Kampfrath <kampfrath@informatik.uni-leipzig.de>
- * 
+ *
  * adapted from /src/mol-plugin-ui/sequence/sequence.tsx
  */
 

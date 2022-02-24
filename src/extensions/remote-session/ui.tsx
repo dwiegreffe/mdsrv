@@ -3,7 +3,7 @@
  *
  * @author David Sehnal <david.sehnal@gmail.com>
  * @author Michelle Kampfrath <kampfrath@informatik.uni-leipzig.de>
- * 
+ *
  * adapted from /src/mol-plugin-ui/state/snapshots.tsx
  */
 
@@ -53,8 +53,8 @@ export class RemoteSessionSnapshots extends CollapsableControls<{ listOnly?: boo
                 />
                 <HelpGroup header='Session Info'>
                     <HelpText>Saving a whole session to a remote session server will not only save he state of the client,
-                        but will also serialize the data imported into the session.
-                        This ensures that the data used can be reloaded unchanged into the client at a later time.
+                    but will also serialize the data imported into the session.
+                    This ensures that the data used can be reloaded unchanged into the client at a later time.
                     </HelpText>
                 </HelpGroup>
                 <div className='msp-flex-row'>

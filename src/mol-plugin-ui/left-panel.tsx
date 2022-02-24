@@ -18,7 +18,7 @@ import { StateObjectActions } from './state/actions';
 import { StateSnapshots } from './state/snapshots';
 import { StateTree } from './state/tree';
 import { HelpContent } from './viewport/help';
-import { HomeOutlinedSvg, AccountTreeOutlinedSvg, TuneSvg, HelpOutlineSvg, SaveOutlinedSvg, DeleteOutlinedSvg } from './controls/icons';
+import { HomeOutlinedSvg, AccountTreeOutlinedSvg, TuneSvg, HelpOutlineSvg, SaveOutlinedSvg, DeleteOutlinedSvg, GridViewSvg, FormatListBulletedSvg, BuildSvg } from './controls/icons';
 import { RemoteSessionSnapshots } from '../extensions/remote-session/ui';
 
 export class LeftPanelControls extends PluginUIComponent<{}, { tab: LeftPanelTabName }> {
@@ -49,27 +49,46 @@ export class LeftPanelControls extends PluginUIComponent<{}, { tab: LeftPanelTab
         if (this.plugin.layout.state.regionState.left !== 'full') {
             PluginCommands.Layout.Update(this.plugin, { state: { regionState: { ...this.plugin.layout.state.regionState, left: 'full' } } });
         }
+        RemoveAllButton;
+    };
+
+    toggle = (panel: string) => {
+        switch (panel) {
+            case 'extensions': this.plugin.layout.state.regionState.extension === 'full'
+                ? PluginCommands.Layout.Update(this.plugin, { state: { regionState: { ...this.plugin.layout.state.regionState, extension: 'hidden' } } })
+                : PluginCommands.Layout.Update(this.plugin, { state: { regionState: { ...this.plugin.layout.state.regionState, extension: 'full' } } }); break;
+            case 'log': this.plugin.layout.state.regionState.bottom === 'full'
+                ? PluginCommands.Layout.Update(this.plugin, { state: { regionState: { ...this.plugin.layout.state.regionState, bottom: 'hidden' } } })
+                : PluginCommands.Layout.Update(this.plugin, { state: { regionState: { ...this.plugin.layout.state.regionState, bottom: 'full' } } }); break;
+            case 'right': this.plugin.layout.state.regionState.right === 'full'
+                ? PluginCommands.Layout.Update(this.plugin, { state: { regionState: { ...this.plugin.layout.state.regionState, right: 'hidden' } } })
+                : PluginCommands.Layout.Update(this.plugin, { state: { regionState: { ...this.plugin.layout.state.regionState, right: 'full' } } }); break;
+        }
     };
 
     tabs: { [K in LeftPanelTabName]: JSX.Element } = {
         'none': <></>,
         'root': <>
-            <SectionHeader icon={HomeOutlinedSvg} title='Home' />
+            <SectionHeader icon={HomeOutlinedSvg} title='Home' toggle={() => this.set('root')} />
             <StateObjectActions state={this.plugin.state.data} nodeRef={StateTransform.RootRef} hideHeader={true} initiallyCollapsed={true} alwaysExpandFirst={false} />
             <RemoteSessionSnapshots listOnly expanded />
             {/* {this.plugin.spec.components?.remoteState !== 'none' && <RemoteStateSnapshots listOnly /> } */}
         </>,
         'data': <>
-            <SectionHeader icon={AccountTreeOutlinedSvg} title={<><RemoveAllButton /> State Tree</>} />
+            <SectionHeader icon={AccountTreeOutlinedSvg} toggle={() => this.set('data')} /* title={<><RemoveAllButton /> State Tree</>}*/
+                title='State Tree' />
             <StateTree state={this.plugin.state.data} />
         </>,
-        'states': <StateSnapshots />,
+        'states': <>
+            <SectionHeader icon={SaveOutlinedSvg} title='Plugin Settings' toggle={() => this.set('states')} />
+            <StateSnapshots />
+        </>,
         'settings': <>
-            <SectionHeader icon={TuneSvg} title='Plugin Settings' />
+            <SectionHeader icon={TuneSvg} title='Plugin Settings' toggle={() => this.set('settings')} />
             <FullSettings />
         </>,
         'help': <>
-            <SectionHeader icon={HelpOutlineSvg} title='Help' />
+            <SectionHeader icon={HelpOutlineSvg} title='Help' toggle={() => this.set('help')} />
             <HelpContent />
         </>
     };
@@ -83,6 +102,9 @@ export class LeftPanelControls extends PluginUIComponent<{}, { tab: LeftPanelTab
                 <DataIcon set={this.set} />
                 <IconButton svg={SaveOutlinedSvg} toggleState={tab === 'states'} transparent onClick={() => this.set('states')} title='Plugin State' />
                 <IconButton svg={HelpOutlineSvg} toggleState={tab === 'help'} transparent onClick={() => this.set('help')} title='Help' />
+                <IconButton svg={FormatListBulletedSvg} toggleState={this.plugin.layout.state.regionState.bottom === 'full'} onClick={() => this.toggle('log')} title={this.plugin.layout.state.regionState.bottom === 'full' ? 'Hide Log' : 'Expand Log'}/>
+                <IconButton svg={GridViewSvg} toggleState={this.plugin.layout.state.regionState.extension === 'full'} onClick={() => this.toggle('extensions')} title={this.plugin.layout.state.regionState.extension === 'hidden' ? 'Expand Extensions' : 'Hide Extensions'} />
+                {window.matchMedia('(orientation: landscape)').matches ? <IconButton svg={BuildSvg} toggleState={this.plugin.layout.state.regionState.right === 'full'} onClick={() => this.toggle('right')} title={this.plugin.layout.state.regionState.right === 'hidden' ? 'Expand Structure Tools' : 'Hide Structure Tools'} /> : null}
                 <div className='msp-left-panel-controls-buttons-bottom'>
                     <IconButton svg={TuneSvg} toggleState={tab === 'settings'} transparent onClick={() => this.set('settings')} title='Settings' />
                 </div>

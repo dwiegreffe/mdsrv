@@ -4,7 +4,7 @@
  * @author Alexander Rose <alexander.rose@weirdbyte.de>
  * @author David Sehnal <david.sehnal@gmail.com>
  * @author Michelle Kampfrath <kampfrath@informatik.uni-leipzig.de>
- * 
+ *
  * parts adapted from /src/mol-plugin-ui/sequence.tsx
  */
 
@@ -128,7 +128,7 @@ export class SequenceAlignmentUI extends CollapsableControls<{}, State_> {
             <ParameterControls
                 params={alignments.value}
                 values={{ alignment: currentRef.value }}
-                onChangeValues={xs => ctrl.setAlignment(xs.alignment)}
+                onChangeValues={xs => { ctrl.setAlignment(xs.alignment); ctrl.alignStrucures(xs.alignment); }}
                 isDisabled={this.state.busy}
             />
             <div className='msp-alignment'>

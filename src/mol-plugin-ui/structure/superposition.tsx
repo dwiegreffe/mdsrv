@@ -53,7 +53,7 @@ export const StructureSuperpositionParams = {
 const DefaultStructureSuperpositionOptions = PD.getDefaultValues(StructureSuperpositionParams);
 export type StructureSuperpositionOptions = PD.ValuesFor<typeof StructureSuperpositionParams>
 
-const SuperpositionTag = 'SuperpositionTransform';
+export const SuperpositionTag = 'SuperpositionTransform';
 
 type SuperpositionControlsState = {
     isBusy: boolean,
@@ -62,7 +62,7 @@ type SuperpositionControlsState = {
     options: StructureSuperpositionOptions
 }
 
-interface LociEntry {
+export interface LociEntry {
     loci: StructureElement.Loci,
     label: string,
     cell: StateObjectCell<PluginStateObject.Molecule.Structure>

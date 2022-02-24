@@ -1,3 +1,12 @@
+/**
+ * Copyright (c) 2019-2021 mol* contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author David Sehnal <david.sehnal@gmail.com>
+ * @author Michelle Kampfrath <kampfrath@informatik.uni-leipzig.de>
+ *
+ * parts adapted from /src/servers/plugin-state/index.ts
+ */
+
 import express from 'express';
 import compression from 'compression';
 import cors from 'cors';
@@ -9,7 +18,7 @@ import { makeDir } from './helper/make-dir';
 import { getConfig } from './config';
 import { UUID } from './helper/uuid';
 import { shortcutIconLink, getSchema } from './api-schema';
-import { getFrameFile, getOffsets } from './helper/helper';
+import { getData, getFrameData } from './helper/helper';
 
 const Config = getConfig();
 
@@ -17,8 +26,6 @@ const app = express();
 app.use(compression(<any>{ level: 6, memLevel: 9, chunkSize: 16 * 16384, filter: () => true }));
 app.use(cors({ methods: ['GET', 'PUT'] }));
 app.use(bodyParser.raw({ inflate: true, type: 'application/zip', limit: '1gb' }));
-
-const trajectoryFiles = new Map<string, Uint8Array>();
 
 type Entry = { timestamp: number, id: string, name: string, description: string }
 
@@ -95,6 +102,7 @@ app.get(mapPath(`/get/session/:id/`), (req, res) => {
 
     fs.readFile(path.join(`${Config.working_folder}/session`, `${id}.molx`), (err, data) => {
         if (err) {
+            console.log(err);
             res.status(404);
             res.end();
             return;
@@ -146,72 +154,53 @@ app.post(mapPath('/set/session'), (req, res) => {
 app.get(mapPath(`/get/trajectory/:id/starts`), (req, res) => {
     const id: string = req.params.id || '';
 
-    if (!(trajectoryFiles.has(id))) {
-        fs.readFile(path.join(`${Config.working_folder}/trajectory`, `${id}.xtc`), (err, data) => {
+    const p = path.join(`${Config.working_folder}/trajectory`, `${id}.xtc`);
 
-            if (err) {
-                res.status(404);
-                res.end();
-                return;
-            }
-
-            const foo = new Uint8Array(data, data.byteOffset);
-            const offsetArray = getOffsets(foo);
-            trajectoryFiles.set(id, foo);
-
-            res.write(`${offsetArray}`);
-            res.end();
-        });
-    } else {
-        const data = trajectoryFiles.get(id)!;
-        const offsetArray = getOffsets(data);
-        res.write(`${offsetArray}`);
+    getData(p).then((value) => {
+        res.write(`${value}`);
         res.end();
-    }
+    }).catch((error) => {
+        console.log(error);
+        res.status(404);
+        res.end();
+        return;
+    });
 });
 
-app.get(mapPath(`/get/trajectory/:id/frame/offset/:offset`), (req, res) => {
+app.get(mapPath(`/get/trajectory/:id/frame/offset/:start/:end`), (req, res) => {
     const id: string = req.params.id || '';
-    const tmpOffset: string = req.params.offset || '-1';
-    let frameOffset: number = -1;
+    const tmpStart: string = req.params.start || '-1';
+    const tmpEnd: string = req.params.end || '-1';
+    let start: number = -1;
+    let end: number = -1;
+
     try {
-        frameOffset = parseInt(tmpOffset);
+        start = parseInt(tmpStart);
+        end = (tmpEnd === 'Infinity') ? Infinity : parseInt(tmpEnd);
     } catch (e) {
         console.log(e);
         res.status(404);
         res.end();
+        return;
     }
-    if (frameOffset === -1) {
+    if (start === -1 || end === -1) {
         res.status(404);
         res.end();
+        return;
     }
 
-    if (!(trajectoryFiles.has(id))) {
-        fs.readFile(path.join(`${Config.working_folder}/trajectory`, `${id}.xtc`), (err, data) => {
+    const p = path.join(`${Config.working_folder}/trajectory`, `${id}.xtc`);
 
-            if (err) {
-                res.status(404);
-                res.end();
-                return;
-            }
-
-            const foo = new Uint8Array(data, data.byteOffset);
-            const file = getFrameFile(foo, frameOffset);
-            trajectoryFiles.set(id, foo);
-
-            res.json(file);
-            res.end();
-        });
-    } else {
-        const data = trajectoryFiles.get(id)!;
-        const file = getFrameFile(data, frameOffset);
-
+    getFrameData(p, start, end).then((file) => {
         res.json(file);
         res.end();
-    }
+    }).catch((error) => {
+        console.log(error);
+        res.status(404);
+        res.end();
+        return;
+    });
 });
-
-//
 
 const schema = getSchema(Config);
 app.get(mapPath('/openapi.json'), (req, res) => {

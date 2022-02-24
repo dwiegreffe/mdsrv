@@ -15,8 +15,8 @@ import { ModelFromTrajectory } from '../mol-plugin-state/transforms/model';
 import { PluginCommands } from '../mol-plugin/commands';
 import { StateTransformer } from '../mol-state';
 import { PluginUIComponent } from './base';
-import { IconButton } from './controls/common';
-import { Icon, NavigateBeforeSvg, NavigateNextSvg, SkipPreviousSvg, StopSvg, PlayArrowSvg, SubscriptionsOutlinedSvg, BuildSvg, GridViewSvg } from './controls/icons';
+import { IconButton, SectionHeader } from './controls/common';
+import { NavigateBeforeSvg, NavigateNextSvg, SkipPreviousSvg, StopSvg, PlayArrowSvg, SubscriptionsOutlinedSvg, BuildSvg, GridViewSvg } from './controls/icons';
 import { AnimationControls } from './state/animation';
 import { StructureComponentControls } from './structure/components';
 import { StructureMeasurementsControls } from './structure/measurements';
@@ -25,9 +25,23 @@ import { StructureSourceControls } from './structure/source';
 import { VolumeStreamingControls, VolumeSourceControls } from './structure/volume';
 import { PluginConfig } from '../mol-plugin/config';
 import { StructureSuperpositionControls } from './structure/superposition';
+import { AnimateModelIndex } from '../mol-plugin-state/animation/built-in/model-index';
+import { Slider } from './controls/slider';
+import { SkipToFrame } from '../extensions/measurement-plot/measurement';
 
-export class TrajectoryViewportControls extends PluginUIComponent<{}, { show: boolean, label: string }> {
-    state = { show: false, label: '' };
+type TrajectoryViewportControlsState = {
+    show: boolean,
+    label: string,
+    isBusy: boolean,
+    isAnimating: boolean,
+    isPlaying: boolean,
+    index: number,
+    frameCount: number,
+    tRef: string
+}
+
+export class TrajectoryViewportControls extends PluginUIComponent<{}, TrajectoryViewportControlsState> {
+    state = { show: false, label: '', isBusy: false, isAnimating: false, isPlaying: false, index: -1, frameCount: -1, tRef: '' };
 
     private update = () => {
         const state = this.plugin.state.data;
@@ -39,7 +53,7 @@ export class TrajectoryViewportControls extends PluginUIComponent<{}, { show: bo
             return;
         }
 
-        let label = '', count = 0;
+        let label = '', count = 0, idx = -1, frameCount = -1, tRef = '';
         const parents = new Set<string>();
         for (const m of models) {
             if (!m.sourceRef) continue;
@@ -56,20 +70,43 @@ export class TrajectoryViewportControls extends PluginUIComponent<{}, { show: bo
                 parents.add(m.sourceRef);
                 count++;
                 if (!label) {
-                    const idx = (m.transform.params! as StateTransformer.Params<ModelFromTrajectory>).modelIndex;
+                    idx = (m.transform.params! as StateTransformer.Params<ModelFromTrajectory>).modelIndex;
                     label = `Model ${idx + 1} / ${parent.data.frameCount}`;
+                    frameCount = parent.data.frameCount;
+                    tRef = m.sourceRef;
                 }
             }
         }
 
         if (count > 1) label = '';
-        this.setState({ show: count > 0, label });
+        this.setState({ show: count > 0, label, index: idx + 1, frameCount, tRef });
     };
 
     componentDidMount() {
         this.subscribe(this.plugin.state.data.events.changed, this.update);
         this.subscribe(this.plugin.behaviors.state.isAnimating, this.update);
+
+        this.subscribe(this.plugin.managers.snapshot.events.changed, () => {
+            if (this.plugin.managers.snapshot.state.isPlaying) this.setState({ isPlaying: true });
+        });
+
+        this.subscribe(this.plugin.behaviors.state.isBusy, isBusy => {
+            this.setState({ isBusy: isBusy });
+        });
+
+        this.subscribe(this.plugin.behaviors.state.isAnimating, isAnimating => {
+            this.setState({ isAnimating: isAnimating });
+        });
     }
+
+    start = () => {
+        this.plugin.managers.animation.play(AnimateModelIndex, { mode: { name: 'loop', params: { direction: 'forward' } }, duration: { name: 'sequential', params: { maxFps: 5 } } });
+    };
+
+    stop = () => {
+        this.plugin.managers.animation.stop();
+        this.plugin.managers.snapshot.stop();
+    };
 
     reset = () => PluginCommands.State.ApplyAction(this.plugin, {
         state: this.plugin.state.data,
@@ -86,17 +123,44 @@ export class TrajectoryViewportControls extends PluginUIComponent<{}, { show: bo
         action: UpdateTrajectory.create({ action: 'advance', by: 1 })
     });
 
+    skip = (frame: number) => PluginCommands.State.ApplyAction(this.plugin, {
+        state: this.plugin.state.data,
+        action: SkipToFrame.create({ trajRef: this.state.tRef, skip: frame - 1 })
+    });
+
+    slide = (frame: number) => {
+        const label = `Model ${frame} / ${this.state.frameCount}`;
+        this.setState({ label });
+    };
+
     render() {
-        const isAnimating = this.plugin.behaviors.state.isAnimating.value;
+        const isPlaying = this.plugin.managers.snapshot.state.isPlaying;
+        if (isPlaying || this.plugin.managers.animation.isEmpty || !this.plugin.config.get(PluginConfig.Viewport.ShowAnimation)) return null;
+        const isAnimating = this.state.isAnimating;
 
         if (!this.state.show || (isAnimating && !this.state.label)) return null;
 
-        return <div className='msp-traj-controls'>
-            {!isAnimating && <IconButton svg={SkipPreviousSvg} title='First Model' onClick={this.reset} disabled={isAnimating} />}
-            {!isAnimating && <IconButton svg={NavigateBeforeSvg} title='Previous Model' onClick={this.prev} disabled={isAnimating} />}
-            {!isAnimating && <IconButton svg={NavigateNextSvg} title='Next Model' onClick={this.next} disabled={isAnimating} />}
-            {!!this.state.label && <span>{this.state.label}</span> }
-        </div>;
+        return <>
+            <div className='msp-traj-controls'>
+                {!isAnimating && <IconButton svg={SkipPreviousSvg} title='First Model' onClick={this.reset} disabled={isAnimating} />}
+                {!isAnimating && <IconButton svg={NavigateBeforeSvg} title='Previous Model' onClick={this.prev} disabled={isAnimating} />}
+                {!isAnimating && <IconButton svg={NavigateNextSvg} title='Next Model' onClick={this.next} disabled={isAnimating} />}
+                {!!this.state.label && <span>{this.state.label}</span> }
+            </div>
+            <div className='msp-traj-play'>
+                <IconButton svg={isAnimating || isPlaying ? StopSvg : PlayArrowSvg} transparent={true}
+                    title={isAnimating ? 'Stop' : 'Start Trajectory'}
+                    onClick={isAnimating || isPlaying ? this.stop : this.start}
+                    disabled={isAnimating || isPlaying ? false : this.state.isBusy || this.state.isPlaying }
+                />
+            </div>
+            {!!this.state.label && <div className='msp-traj-progress'>
+                <Slider min={1} max={this.state.frameCount} step={1} value={this.state.index}
+                    onChange={this.skip}
+                    textInput={false}
+                    onChangeImmediate={this.slide}/>
+            </div>}
+        </>;
     }
 }
 
@@ -286,9 +350,13 @@ export class CustomStructureControls extends PluginUIComponent<{ initiallyCollap
 }
 
 export class DefaultStructureTools extends PluginUIComponent {
+    toggle = () => {
+        PluginCommands.Layout.Update(this.plugin, { state: { regionState: { ...this.plugin.layout.state.regionState, right: 'hidden' } } });
+    };
+
     render() {
         return <>
-            <div className='msp-section-header'><Icon svg={BuildSvg} />Structure Tools</div>
+            <SectionHeader icon={BuildSvg} title='Structure Tools' toggle={() => this.toggle()} />
 
             <StructureSourceControls />
             <StructureMeasurementsControls />
@@ -302,10 +370,14 @@ export class DefaultStructureTools extends PluginUIComponent {
     }
 }
 
-export class ExtensionPanelControls extends PluginUIComponent<{}, {isCollapsed: boolean}> {
+export class ExtensionPanelControls extends PluginUIComponent<{}, {}> {
     componentDidMount() {
         this.subscribe(this.plugin.state.behaviors.events.changed, () => this.forceUpdate());
     }
+
+    toggle = () => {
+        PluginCommands.Layout.Update(this.plugin, { state: { regionState: { ...this.plugin.layout.state.regionState, extension: 'hidden' } } });
+    };
 
     render() {
         const controls: JSX.Element[] = [];
@@ -313,7 +385,7 @@ export class ExtensionPanelControls extends PluginUIComponent<{}, {isCollapsed: 
             controls.push(<Controls initiallyCollapsed={true} key={key} />);
         }));
         return <div className='msp-scrollable-container'>
-            <div className='msp-section-header'><Icon svg={GridViewSvg} />Extensions</div>
+            <SectionHeader icon={GridViewSvg} title='Extensions' toggle={() => this.toggle()} />
             {controls}
         </div>;
     }

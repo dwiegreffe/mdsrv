@@ -3,7 +3,7 @@
  *
  * @author David Sehnal <david.sehnal@gmail.com>
  * @author Michelle Kampfrath <kampfrath@informatik.uni-leipzig.de>
- * 
+ *
  * adapted from /src/servers/plugin-state/config.ts
  */
 

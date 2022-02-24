@@ -1,8 +1,9 @@
 /**
- * Copyright (c) 2019-2020 mol* contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2019-2021 mol* contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author David Sehnal <david.sehnal@gmail.com>
  * @author Alexander Rose <alexander.rose@weirdbyte.de>
+ * @author Michelle Kampfrath <kampfrath@informatik.uni-leipzig.de>
  */
 
 import { MinimizeRmsd } from '../../../../mol-math/linear-algebra/3d/minimize-rmsd';
@@ -34,7 +35,7 @@ export function superpose(xs: StructureElement.Loci[]): MinimizeRmsd.Result[] {
 type AlignAndSuperposeResult = MinimizeRmsd.Result & { alignmentScore: number };
 const reProtein = /(polypeptide|cyclic-pseudo-peptide)/i;
 
-export function alignAndSuperpose(xs: StructureElement.Loci[]): AlignAndSuperposeResult[] {
+export function alignAndSuperpose(xs: StructureElement.Loci[], as?: string[]): AlignAndSuperposeResult[] {
     const ret: AlignAndSuperposeResult[] = [];
     if (xs.length <= 0) return ret;
 
@@ -43,10 +44,17 @@ export function alignAndSuperpose(xs: StructureElement.Loci[]): AlignAndSuperpos
     const substMatrix = subtype.match(reProtein) ? 'blosum62' : 'default';
 
     for (let i = 1; i < xs.length; i++) {
-        const { a, b, score } = AlignSequences.compute({
-            a: xs[0].elements[0],
-            b: xs[i].elements[0],
-        }, { substMatrix });
+        const { a, b, score } = (as && as.length === xs.length)
+            ? AlignSequences.compute({
+                a: xs[0].elements[0],
+                b: xs[i].elements[0],
+                as: as[0],
+                bs: as[i]
+            })
+            : AlignSequences.compute({
+                a: xs[0].elements[0],
+                b: xs[i].elements[0],
+            }, { substMatrix });
 
         const lociA = StructureElement.Loci(xs[0].structure, [a]);
         const lociB = StructureElement.Loci(xs[i].structure, [b]);

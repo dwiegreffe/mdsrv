@@ -64,6 +64,8 @@ const _AccountTreeOutlined = <svg width='24px' height='24px' viewBox='0 0 24 24'
 export function AccountTreeOutlinedSvg() { return _AccountTreeOutlined; }
 const _Add = <svg width='24px' height='24px' viewBox='0 0 24 24'><path d='M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z' /></svg>;
 export function AddSvg() { return _Add; }
+const _ArrowBackIos = <svg width='24px' height='24px' viewBox='0 0 24 24'><path d='M17.77 3.77 16 2 6 12l10 10 1.77-1.77L9.54 12z' /></svg>;
+export function ArrowBackIosSvg() { return _ArrowBackIos; }
 const _ArrowDownward = <svg width='24px' height='24px' viewBox='0 0 24 24'><path d='M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z' /></svg>;
 export function ArrowDownwardSvg() { return _ArrowDownward; }
 const _ArrowDropDown = <svg width='24px' height='24px' viewBox='0 0 24 24'><path d='M7 10l5 5 5-5z' /></svg>;
@@ -127,6 +129,8 @@ export function FlipToFrontSvg() { return _FlipToFront; }
 const _Fullscreen = <svg width='24px' height='24px' viewBox='0 0 24 24'><path d='M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z' /></svg>;
 export function FullscreenSvg() { return _Fullscreen; }
 const _GetApp = <svg width='24px' height='24px' viewBox='0 0 24 24'><path d='M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z' /></svg>;
+export function FormatListBulletedSvg() { return _FormatListBulleted; }
+const _FormatListBulleted = <svg width='24px' height='24px' viewBox='0 0 24 24'><path d='M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z' /></svg>;
 export function GetAppSvg() { return _GetApp; }
 const _GridView = <svg width='24px' height='24px' viewBox='0 0 24 24'><path d='M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z' /></svg>;
 export function GridViewSvg() { return _GridView; }

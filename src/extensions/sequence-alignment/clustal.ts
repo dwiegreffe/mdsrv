@@ -40,9 +40,9 @@ export function clustalFromClustal(file: ClustalFile): Task<Clustal> {
     return Task.create('Parse Clustal', async ctx => {
         await ctx.update('Convertring to Clustal');
         const alignment: ClustalSequence = {
-            length: file.alignment.length,
+            length: file.conservation.length,
             chain: 'alignment',
-            sequence: file.alignment
+            sequence: file.conservation
         };
         const sequences: ClustalSequence[] = [];
         for (let i = 0; i < file.sequences.length; i++) {
