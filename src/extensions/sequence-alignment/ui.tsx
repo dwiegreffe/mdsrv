@@ -44,7 +44,7 @@ export class SequenceAlignmentUI extends CollapsableControls<{}, State_> {
 
     protected defaultState(): State_ & CollapsableState {
         return {
-            header: 'Sequence Alignment',
+            header: 'View Sequence Alignment',
             isCollapsed: true,
             brand: { accent: 'cyan', svg: ClearAllSvg },
             isHidden: false,

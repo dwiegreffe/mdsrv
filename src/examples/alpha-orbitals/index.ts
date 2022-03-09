@@ -11,7 +11,7 @@ import { SphericalBasisOrder } from '../../extensions/alpha-orbitals/spherical-f
 import { BasisAndOrbitals, CreateOrbitalDensityVolume, CreateOrbitalRepresentation3D, CreateOrbitalVolume, StaticBasisAndOrbitals } from '../../extensions/alpha-orbitals/transforms';
 import { canComputeGrid3dOnGPU } from '../../mol-gl/compute/grid3d';
 import { PluginStateObject } from '../../mol-plugin-state/objects';
-import { createPluginAsync } from '../../mol-plugin-ui';
+import { createPluginUI } from '../../mol-plugin-ui';
 import { PluginUIContext } from '../../mol-plugin-ui/context';
 import { DefaultPluginUISpec } from '../../mol-plugin-ui/spec';
 import { PluginCommands } from '../../mol-plugin/commands';
@@ -54,7 +54,7 @@ export class AlphaOrbitalsExample {
 
     async init(target: string | HTMLElement) {
         const defaultSpec = DefaultPluginUISpec();
-        this.plugin = await createPluginAsync(typeof target === 'string' ? document.getElementById(target)! : target, {
+        this.plugin = await createPluginUI(typeof target === 'string' ? document.getElementById(target)! : target, {
             ...defaultSpec,
             layout: {
                 initial: {
@@ -67,7 +67,7 @@ export class AlphaOrbitalsExample {
             },
             canvas3d: {
                 camera: {
-                    helper: { axes: { name: 'off', params: { } } }
+                    helper: { axes: { name: 'off', params: {} } }
                 }
             },
             config: [
@@ -97,7 +97,7 @@ export class AlphaOrbitalsExample {
     }
 
     readonly params = new BehaviorSubject<ParamDefinition.For<Params>>({} as any);
-    readonly state = new BehaviorSubject<Params>({ show: { name: 'orbital', params: { index: 32 } }, isoValue: 1, gpuSurface: false });
+    readonly state = new BehaviorSubject<Params>({ show: { name: 'orbital', params: { index: 32 } }, isoValue: 1, gpuSurface: true });
 
     private selectors?: Selectors = void 0;
     private basis?: StateObjectSelector<BasisAndOrbitals> = void 0;
@@ -170,12 +170,11 @@ export class AlphaOrbitalsExample {
         return {
             alpha: 0.85,
             color,
-            directVolume: this.state.value.gpuSurface,
             kind,
             relativeIsovalue: this.state.value.isoValue,
             pickable: false,
             xrayShaded: true,
-            tryUseGpu: false
+            tryUseGpu: true
         };
     }
 

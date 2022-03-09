@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2019-2021 mol* contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2019-2022 mol* contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Alexander Rose <alexander.rose@weirdbyte.de>
  */
@@ -40,7 +40,7 @@ type MolecularSurfaceMeta = {
 //
 
 async function createMolecularSurfaceMesh(ctx: VisualContext, unit: Unit, structure: Structure, theme: Theme, props: MolecularSurfaceMeshProps, mesh?: Mesh): Promise<Mesh> {
-    const { transform, field, idField, resolution } = await computeUnitMolecularSurface(structure, unit, props).runInContext(ctx.runtime);
+    const { transform, field, idField, resolution } = await computeUnitMolecularSurface(structure, unit, theme.size, props).runInContext(ctx.runtime);
 
     const params = {
         isoLevel: props.probeRadius,
@@ -57,7 +57,7 @@ async function createMolecularSurfaceMesh(ctx: VisualContext, unit: Unit, struct
     Mesh.transform(surface, transform);
     if (ctx.webgl && !ctx.webgl.isWebGL2) Mesh.uniformTriangleGroup(surface);
 
-    const sphere = Sphere3D.expand(Sphere3D(), unit.boundary.sphere, props.probeRadius + getUnitExtraRadius(unit));
+    const sphere = Sphere3D.expand(Sphere3D(), unit.boundary.sphere, getUnitExtraRadius(unit));
     surface.setBoundingSphere(sphere);
     (surface.meta as MolecularSurfaceMeta).resolution = resolution;
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018-2021 mol* contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2018-2022 mol* contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author David Sehnal <david.sehnal@gmail.com>
  * @author Alexander Rose <alexander.rose@weirdbyte.de>
@@ -28,6 +28,7 @@ import { StructureSuperpositionControls } from './structure/superposition';
 import { AnimateModelIndex } from '../mol-plugin-state/animation/built-in/model-index';
 import { Slider } from './controls/slider';
 import { SkipToFrame } from '../extensions/measurement-plot/measurement';
+import { StructureQuickStylesControls } from './structure/quick-styles';
 
 type TrajectoryViewportControlsState = {
     show: boolean,
@@ -190,7 +191,7 @@ export class StateSnapshotViewportControls extends PluginUIComponent<{}, { isBus
         } else if (e.keyCode === 38 || e.key === 'ArrowUp') {
             if (snapshots.state.isPlaying) snapshots.stop();
             if (snapshots.state.entries.size === 0) return;
-            const e = snapshots.state.entries.get(0);
+            const e = snapshots.state.entries.get(0)!;
             this.update(e.snapshot.id);
         } else if (e.keyCode === 39 || e.key === 'ArrowRight') {
             if (snapshots.state.isPlaying) snapshots.stop();
@@ -198,7 +199,7 @@ export class StateSnapshotViewportControls extends PluginUIComponent<{}, { isBus
         } else if (e.keyCode === 40 || e.key === 'ArrowDown') {
             if (snapshots.state.isPlaying) snapshots.stop();
             if (snapshots.state.entries.size === 0) return;
-            const e = snapshots.state.entries.get(snapshots.state.entries.size - 1);
+            const e = snapshots.state.entries.get(snapshots.state.entries.size - 1)!;
             this.update(e.snapshot.id);
         }
     };
@@ -361,6 +362,7 @@ export class DefaultStructureTools extends PluginUIComponent {
             <StructureSourceControls />
             <StructureMeasurementsControls />
             <StructureSuperpositionControls />
+            <StructureQuickStylesControls />
             <StructureComponentControls />
             {this.plugin.config.get(PluginConfig.VolumeStreaming.Enabled) && <VolumeStreamingControls />}
             <VolumeSourceControls />

@@ -39,6 +39,7 @@ import { Helper } from './helper/helper';
 import { Passes } from './passes/passes';
 import { shallowEqual } from '../mol-util';
 import { MarkingParams } from './passes/marking';
+import { GraphicsRenderVariantsBlended, GraphicsRenderVariantsWboit } from '../mol-gl/webgl/render-item';
 
 export const Canvas3DParams = {
     camera: PD.Group({
@@ -222,7 +223,7 @@ interface Canvas3D {
     clear(): void
     syncVisibility(): void
 
-    requestDraw(force?: boolean): void
+    requestDraw(): void
 
     /** Reset the timers, used by "animate" */
     resetTime(t: number): void
@@ -235,7 +236,7 @@ interface Canvas3D {
     /** Sets drawPaused = false without starting the built in animation loop */
     resume(): void
     identify(x: number, y: number): PickData | undefined
-    mark(loci: Representation.Loci, action: MarkerAction, noDraw?: boolean): void
+    mark(loci: Representation.Loci, action: MarkerAction): void
     getLoci(pickingId: PickingId | undefined): Representation.Loci
 
     notifyDidDraw: boolean,
@@ -296,7 +297,7 @@ namespace Canvas3D {
         let height = 128;
         updateViewport();
 
-        const scene = Scene.create(webgl);
+        const scene = Scene.create(webgl, passes.draw.wboitEnabled ? GraphicsRenderVariantsWboit : GraphicsRenderVariantsBlended);
 
         const camera = new Camera({
             position: Vec3.create(0, 0, 100),
@@ -344,7 +345,30 @@ namespace Canvas3D {
             return { loci, repr };
         }
 
-        function mark(reprLoci: Representation.Loci, action: MarkerAction, noDraw = false) {
+        let markBuffer: [reprLoci: Representation.Loci, action: MarkerAction][] = [];
+
+        function mark(reprLoci: Representation.Loci, action: MarkerAction) {
+            // NOTE: might try to optimize a case with opposite actions for the
+            //       same loci. Tho this might end up being more expensive (and error prone)
+            //       then just applying everything "naively".
+            markBuffer.push([reprLoci, action]);
+        }
+
+        function resolveMarking() {
+            let changed = false;
+            for (const [r, l] of markBuffer) {
+                changed = applyMark(r, l) || changed;
+            }
+            markBuffer = [];
+            if (changed) {
+                scene.update(void 0, true);
+                helper.handle.scene.update(void 0, true);
+                helper.camera.scene.update(void 0, true);
+            }
+            return changed;
+        }
+
+        function applyMark(reprLoci: Representation.Loci, action: MarkerAction) {
             const { repr, loci } = reprLoci;
             let changed = false;
             if (repr) {
@@ -354,14 +378,7 @@ namespace Canvas3D {
                 changed = helper.camera.mark(loci, action) || changed;
                 reprRenderObjects.forEach((_, _repr) => { changed = _repr.mark(loci, action) || changed; });
             }
-            if (changed && !noDraw) {
-                scene.update(void 0, true);
-                helper.handle.scene.update(void 0, true);
-                helper.camera.scene.update(void 0, true);
-                const prevPickDirty = pickHelper.dirty;
-                draw(true);
-                pickHelper.dirty = prevPickDirty; // marking does not change picking buffers
-            }
+            return changed;
         }
 
         function render(force: boolean) {
@@ -378,6 +395,8 @@ namespace Canvas3D {
                 y > gl.drawingBufferHeight || y + height < 0
             ) return false;
 
+            const markingUpdated = resolveMarking();
+
             let didRender = false;
             controls.update(currentTime);
             const cameraChanged = camera.update();
@@ -385,21 +404,24 @@ namespace Canvas3D {
             const shouldRender = force || cameraChanged || resized || forceNextRender;
             forceNextRender = false;
 
-            const multiSampleChanged = multiSampleHelper.update(shouldRender, p.multiSample);
+            const multiSampleChanged = multiSampleHelper.update(markingUpdated || shouldRender, p.multiSample);
 
-            if (shouldRender || multiSampleChanged) {
+            if (shouldRender || multiSampleChanged || markingUpdated) {
                 let cam: Camera | StereoCamera = camera;
                 if (p.camera.stereo.name === 'on') {
                     stereoCamera.update();
                     cam = stereoCamera;
                 }
 
+                const ctx = { renderer, camera: cam, scene, helper };
                 if (MultiSamplePass.isEnabled(p.multiSample)) {
-                    multiSampleHelper.render(renderer, cam, scene, helper, true, p.transparentBackground, p);
+                    const forceOn = !cameraChanged && markingUpdated && !controls.isAnimating;
+                    multiSampleHelper.render(ctx, p, true, forceOn);
                 } else {
-                    passes.draw.render(renderer, cam, scene, helper, true, p.transparentBackground, p.postprocessing, p.marking);
+                    passes.draw.render(ctx, p, true);
                 }
-                pickHelper.dirty = true;
+                // if only marking has updated, do not set the flag to dirty
+                pickHelper.dirty = pickHelper.dirty || shouldRender;
                 didRender = true;
             }
 
@@ -411,15 +433,15 @@ namespace Canvas3D {
         let currentTime = 0;
         let drawPaused = false;
 
-        function draw(force?: boolean) {
+        function draw(options?: { force?: boolean }) {
             if (drawPaused) return;
-            if (render(!!force) && notifyDidDraw) {
+            if (render(!!options?.force) && notifyDidDraw) {
                 didDraw.next(now() - startTime as now.Timestamp);
             }
         }
 
-        function requestDraw(force?: boolean) {
-            forceNextRender = forceNextRender || !!force;
+        function requestDraw() {
+            forceNextRender = true;
         }
 
         let animationFrameHandle = 0;
@@ -433,7 +455,7 @@ namespace Canvas3D {
                 return;
             }
 
-            draw(false);
+            draw();
             if (!camera.transition.inTransition && !webgl.isContextLost) {
                 interactionHelper.tick(currentTime);
             }
@@ -473,7 +495,7 @@ namespace Canvas3D {
                 resolveCameraReset();
                 if (forceDrawAfterAllCommited) {
                     if (helper.debug.isEnabled) helper.debug.update();
-                    draw(true);
+                    draw({ force: true });
                     forceDrawAfterAllCommited = false;
                 }
                 commited.next(now());
@@ -514,7 +536,7 @@ namespace Canvas3D {
 
             if (camera.transition.inTransition || nextCameraResetSnapshot) return false;
 
-            let cameraSphereOverlapsNone = true;
+            let cameraSphereOverlapsNone = true, isEmpty = true;
             Sphere3D.set(cameraSphere, camera.state.target, camera.state.radius);
 
             // check if any renderable has moved outside of the old bounding sphere
@@ -525,12 +547,13 @@ namespace Canvas3D {
                 const b = r.values.boundingSphere.ref.value;
                 if (!b.radius) continue;
 
+                isEmpty = false;
                 const cameraDist = Vec3.distance(cameraSphere.center, b.center);
                 if ((cameraDist > cameraSphere.radius || cameraDist > b.radius || b.radius > camera.state.radiusMax) && !Sphere3D.includes(oldBoundingSphereVisible, b)) return true;
                 if (Sphere3D.overlaps(cameraSphere, b)) cameraSphereOverlapsNone = false;
             }
 
-            return cameraSphereOverlapsNone;
+            return cameraSphereOverlapsNone || (!isEmpty && cameraSphere.radius <= 0.1);
         }
 
         const sceneCommitTimeoutMs = 250;
@@ -655,11 +678,11 @@ namespace Canvas3D {
 
         const contextRestoredSub = contextRestored.subscribe(() => {
             pickHelper.dirty = true;
-            draw(true);
+            draw({ force: true });
             // Unclear why, but in Chrome with wboit enabled the first `draw` only clears
             // the drawingBuffer. Note that in Firefox the drawingBuffer is preserved after
             // context loss so it is unclear if it behaves the same.
-            draw(true);
+            draw({ force: true });
         });
 
         const resized = new BehaviorSubject<any>(0);
@@ -668,7 +691,7 @@ namespace Canvas3D {
             passes.updateSize();
             updateViewport();
             syncViewport();
-            if (draw) requestDraw(true);
+            if (draw) requestDraw();
             resized.next(+new Date());
         }
 
@@ -693,7 +716,7 @@ namespace Canvas3D {
                 reprRenderObjects.clear();
                 scene.clear();
                 helper.debug.clear();
-                requestDraw(true);
+                requestDraw();
                 reprCount.next(reprRenderObjects.size);
             },
             syncVisibility: () => {
@@ -705,7 +728,7 @@ namespace Canvas3D {
                 if (scene.syncVisibility()) {
                     if (helper.debug.isEnabled) helper.debug.update();
                 }
-                requestDraw(true);
+                requestDraw();
             },
 
             requestDraw,
@@ -793,7 +816,7 @@ namespace Canvas3D {
                 }
 
                 if (!doNotRequestDraw) {
-                    requestDraw(true);
+                    requestDraw();
                 }
             },
             getImagePass: (props: Partial<ImageProps> = {}) => {
@@ -819,6 +842,8 @@ namespace Canvas3D {
             },
             dispose: () => {
                 contextRestoredSub.unsubscribe();
+
+                markBuffer = [];
 
                 scene.clear();
                 helper.debug.clear();

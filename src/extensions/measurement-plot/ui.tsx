@@ -46,7 +46,7 @@ export class MeasurementLinePlotUI extends CollapsableControls<{}, State> {
 
     protected defaultState(): State & CollapsableState {
         return {
-            header: 'Measurement Line Plot',
+            header: 'Time-trace Plot',
             isCollapsed: true,
             brand: { accent: 'cyan', svg: ShowChart },
             isHidden: false,

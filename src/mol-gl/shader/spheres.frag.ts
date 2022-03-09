@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2019-2021 mol* contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2019-2022 mol* contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Alexander Rose <alexander.rose@weirdbyte.de>
  */
@@ -66,10 +66,9 @@ void main(void){
     #include clip_pixel
 
     bool flag = Impostor(cameraPos, cameraNormal);
-    #ifndef dDoubleSided
-        if (interior)
-            discard;
-    #endif
+    if (!uDoubleSided) {
+        if (interior) discard;
+    }
 
     vec3 vViewPosition = cameraPos;
     gl_FragDepthEXT = calcDepth(vViewPosition);
@@ -93,12 +92,8 @@ void main(void){
     #elif defined(dRenderVariant_marking)
         gl_FragColor = material;
     #elif defined(dRenderVariant_color)
-        #ifdef dIgnoreLight
-            gl_FragColor = material;
-        #else
-            vec3 normal = -cameraNormal;
-            #include apply_light_color
-        #endif
+        vec3 normal = -cameraNormal;
+        #include apply_light_color
 
         #include apply_interior_color
         #include apply_marker_color

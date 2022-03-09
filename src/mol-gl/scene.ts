@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018-2020 mol* contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2018-2022 mol* contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Alexander Rose <alexander.rose@weirdbyte.de>
  * @author David Sehnal <david.sehnal@gmail.com>
@@ -15,6 +15,7 @@ import { arraySetRemove } from '../mol-util/array';
 import { BoundaryHelper } from '../mol-math/geometry/boundary-helper';
 import { hash1 } from '../mol-data/util';
 import { GraphicsRenderable } from './renderable';
+import { GraphicsRenderVariants } from './webgl/render-item';
 
 const boundaryHelper = new BoundaryHelper('98');
 
@@ -43,8 +44,8 @@ function calculateBoundingSphere(renderables: GraphicsRenderable[], boundingSphe
 }
 
 function renderableSort(a: GraphicsRenderable, b: GraphicsRenderable) {
-    const drawProgramIdA = a.getProgram('colorBlended').id;
-    const drawProgramIdB = b.getProgram('colorBlended').id;
+    const drawProgramIdA = (a.getProgram('colorBlended') || a.getProgram('colorWboit')).id;
+    const drawProgramIdB = (b.getProgram('colorBlended') || a.getProgram('colorWboit')).id;
     const materialIdA = a.materialId;
     const materialIdB = b.materialId;
 
@@ -78,6 +79,7 @@ interface Scene extends Object3D {
     has: (o: GraphicsRenderObject) => boolean
     clear: () => void
     forEach: (callbackFn: (value: GraphicsRenderable, key: GraphicsRenderObject) => void) => void
+    getMarkerAverage: () => number
 }
 
 namespace Scene {
@@ -85,7 +87,7 @@ namespace Scene {
         readonly renderables: ReadonlyArray<GraphicsRenderable>
     }
 
-    export function create(ctx: WebGLContext): Scene {
+    export function create(ctx: WebGLContext, variants = GraphicsRenderVariants): Scene {
         const renderableMap = new Map<GraphicsRenderObject, GraphicsRenderable>();
         const renderables: GraphicsRenderable[] = [];
         const boundingSphere = Sphere3D();
@@ -102,7 +104,7 @@ namespace Scene {
 
         function add(o: GraphicsRenderObject) {
             if (!renderableMap.has(o)) {
-                const renderable = createRenderable(ctx, o);
+                const renderable = createRenderable(ctx, o, variants);
                 renderables.push(renderable);
                 if (o.type === 'direct-volume') {
                     volumes.push(renderable);
@@ -242,7 +244,18 @@ namespace Scene {
                     visibleHash = computeVisibleHash();
                 }
                 return boundingSphereVisible;
-            }
+            },
+            getMarkerAverage() {
+                if (primitives.length === 0 && volumes.length === 0) return 0;
+                let markerAverage = 0;
+                for (let i = 0, il = primitives.length; i < il; ++i) {
+                    markerAverage += primitives[i].values.markerAverage.ref.value;
+                }
+                for (let i = 0, il = volumes.length; i < il; ++i) {
+                    markerAverage += volumes[i].values.markerAverage.ref.value;
+                }
+                return markerAverage / (primitives.length + volumes.length);
+            },
         };
     }
 }

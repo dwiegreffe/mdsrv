@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018-2021 mol* contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2018-2022 mol* contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author David Sehnal <david.sehnal@gmail.com>
  * @author Alexander Rose <alexander.rose@weirdbyte.de>
@@ -43,9 +43,9 @@ export const HighlightLoci = PluginBehavior.create({
     name: 'representation-highlight-loci',
     category: 'interaction',
     ctor: class extends PluginBehavior.Handler<HighlightLociProps> {
-        private lociMarkProvider = (interactionLoci: Representation.Loci, action: MarkerAction, noRender?: boolean) => {
+        private lociMarkProvider = (interactionLoci: Representation.Loci, action: MarkerAction) => {
             if (!this.ctx.canvas3d || !this.params.mark) return;
-            this.ctx.canvas3d.mark(interactionLoci, action, noRender);
+            this.ctx.canvas3d.mark(interactionLoci, action);
         };
         private getLoci(loci: Loci) {
             return this.params.preferAtoms && Bond.isLoci(loci) && loci.bonds.length === 2
@@ -57,7 +57,7 @@ export const HighlightLoci = PluginBehavior.create({
                 if (!this.ctx.canvas3d || this.ctx.isBusy) return;
 
                 const loci = this.getLoci(current.loci);
-                if (this.params.ignore?.indexOf(loci.kind) >= 0) {
+                if (this.params.ignore.includes(loci.kind)) {
                     this.ctx.managers.interactivity.lociHighlights.highlightOnly({ repr: current.repr, loci: EmptyLoci });
                     return;
                 }
@@ -113,9 +113,9 @@ export const SelectLoci = PluginBehavior.create({
     category: 'interaction',
     ctor: class extends PluginBehavior.Handler<SelectLociProps> {
         private spine: StateTreeSpine.Impl;
-        private lociMarkProvider = (reprLoci: Representation.Loci, action: MarkerAction, noRender?: boolean) => {
+        private lociMarkProvider = (reprLoci: Representation.Loci, action: MarkerAction) => {
             if (!this.ctx.canvas3d || !this.params.mark) return;
-            this.ctx.canvas3d.mark({ loci: reprLoci.loci }, action, noRender);
+            this.ctx.canvas3d.mark({ loci: reprLoci.loci }, action);
         };
         private getLoci(loci: Loci) {
             return this.params.preferAtoms && Bond.isLoci(loci) && loci.bonds.length === 2
@@ -161,7 +161,7 @@ export const SelectLoci = PluginBehavior.create({
                 if (!this.ctx.canvas3d || this.ctx.isBusy || !this.ctx.selectionMode) return;
 
                 const loci = this.getLoci(current.loci);
-                if (this.params.ignore?.indexOf(loci.kind) >= 0) return;
+                if (this.params.ignore.includes(loci.kind)) return;
 
                 // only trigger the 1st action that matches
                 for (const [binding, action, condition] of actions) {
@@ -186,7 +186,7 @@ export const SelectLoci = PluginBehavior.create({
                         Structure.areEquivalent(structure, oldStructure) &&
                         Structure.areHierarchiesEqual(structure, oldStructure)) return;
 
-                    const reprs = this.ctx.state.data.select(StateSelection.Generators.ofType(SO.Molecule.Structure.Representation3D, ref));
+                    const reprs = this.ctx.state.data.select(StateSelection.children(ref).ofType(SO.Molecule.Structure.Representation3D));
                     for (const repr of reprs) this.applySelectMark(repr.transform.ref, true);
                 }
             });
@@ -212,11 +212,14 @@ export const DefaultLociLabelProvider = PluginBehavior.create({
         private f = {
             label: (loci: Loci) => {
                 const label: string[] = [];
-                if (StructureElement.Loci.is(loci) && loci.elements.length === 1) {
-                    const { unit: u } = loci.elements[0];
-                    const l = StructureElement.Location.create(loci.structure, u, u.elements[0]);
-                    const name = StructureProperties.entity.pdbx_description(l).join(', ');
-                    label.push(name);
+                if (StructureElement.Loci.is(loci)) {
+                    const entityNames = new Set<string>();
+                    for (const { unit: u } of loci.elements) {
+                        const l = StructureElement.Location.create(loci.structure, u, u.elements[0]);
+                        const name = StructureProperties.entity.pdbx_description(l).join(', ');
+                        entityNames.add(name);
+                    }
+                    if (entityNames.size === 1) entityNames.forEach(name => label.push(name));
                 }
                 label.push(lociLabel(loci));
                 return label.filter(l => !!l).join('</br>');

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2019-2021 mol* contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2019-2022 mol* contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Alexander Rose <alexander.rose@weirdbyte.de>
  * @author Áron Samuel Kovács <aron.kovacs@mail.muni.cz>
@@ -51,6 +51,19 @@ function getDepthMergeRenderable(ctx: WebGLContext, depthTexturePrimitives: Text
     const renderItem = createComputeRenderItem(ctx, 'triangles', DepthMergeShaderCode, schema, values);
 
     return createComputeRenderable(renderItem, values);
+}
+
+type Props = {
+    postprocessing: PostprocessingProps
+    marking: MarkingProps
+    transparentBackground: boolean;
+}
+
+type RenderContext = {
+    renderer: Renderer;
+    camera: Camera | StereoCamera;
+    scene: Scene;
+    helper: Helper;
 }
 
 export class DrawPass {
@@ -264,25 +277,25 @@ export class DrawPass {
         renderer.renderBlendedTransparent(scene.primitives, camera, null);
     }
 
-    private _render(renderer: Renderer, camera: ICamera, scene: Scene, helper: Helper, toDrawingBuffer: boolean, transparentBackground: boolean, postprocessingProps: PostprocessingProps, markingProps: MarkingProps) {
+    private _render(renderer: Renderer, camera: ICamera, scene: Scene, helper: Helper, toDrawingBuffer: boolean, props: Props) {
         const volumeRendering = scene.volumes.renderables.length > 0;
-        const postprocessingEnabled = PostprocessingPass.isEnabled(postprocessingProps);
-        const antialiasingEnabled = AntialiasingPass.isEnabled(postprocessingProps);
-        const markingEnabled = MarkingPass.isEnabled(markingProps);
+        const postprocessingEnabled = PostprocessingPass.isEnabled(props.postprocessing);
+        const antialiasingEnabled = AntialiasingPass.isEnabled(props.postprocessing);
+        const markingEnabled = MarkingPass.isEnabled(props.marking);
 
         const { x, y, width, height } = camera.viewport;
         renderer.setViewport(x, y, width, height);
         renderer.update(camera);
 
-        if (transparentBackground && !antialiasingEnabled && toDrawingBuffer) {
+        if (props.transparentBackground && !antialiasingEnabled && toDrawingBuffer) {
             this.drawTarget.bind();
             renderer.clear(false);
         }
 
         if (this.wboitEnabled) {
-            this._renderWboit(renderer, camera, scene, transparentBackground, postprocessingProps);
+            this._renderWboit(renderer, camera, scene, props.transparentBackground, props.postprocessing);
         } else {
-            this._renderBlended(renderer, camera, scene, !volumeRendering && !postprocessingEnabled && !antialiasingEnabled && toDrawingBuffer, transparentBackground, postprocessingProps);
+            this._renderBlended(renderer, camera, scene, !volumeRendering && !postprocessingEnabled && !antialiasingEnabled && toDrawingBuffer, props.transparentBackground, props.postprocessing);
         }
 
         if (postprocessingEnabled) {
@@ -294,19 +307,22 @@ export class DrawPass {
         }
 
         if (markingEnabled) {
-            const markingDepthTest = markingProps.ghostEdgeStrength < 1;
-            if (markingDepthTest) {
-                this.marking.depthTarget.bind();
-                renderer.clear(false);
-                renderer.renderMarkingDepth(scene.primitives, camera, null);
+            const markerAverage = scene.getMarkerAverage();
+            if (markerAverage > 0) {
+                const markingDepthTest = props.marking.ghostEdgeStrength < 1;
+                if (markingDepthTest && markerAverage !== 1) {
+                    this.marking.depthTarget.bind();
+                    renderer.clear(false, true);
+                    renderer.renderMarkingDepth(scene.primitives, camera, null);
+                }
+
+                this.marking.maskTarget.bind();
+                renderer.clear(false, true);
+                renderer.renderMarkingMask(scene.primitives, camera, markingDepthTest ? this.marking.depthTarget.texture : null);
+
+                this.marking.update(props.marking);
+                this.marking.render(camera.viewport, postprocessingEnabled ? this.postprocessing.target : this.colorTarget);
             }
-
-            this.marking.maskTarget.bind();
-            renderer.clear(false);
-            renderer.renderMarkingMask(scene.primitives, camera, markingDepthTest ? this.marking.depthTarget.texture : null);
-
-            this.marking.update(markingProps);
-            this.marking.render(camera.viewport, postprocessingEnabled ? this.postprocessing.target : this.colorTarget);
         }
 
         if (helper.debug.isEnabled) {
@@ -323,7 +339,7 @@ export class DrawPass {
         }
 
         if (antialiasingEnabled) {
-            this.antialiasing.render(camera, toDrawingBuffer, postprocessingProps);
+            this.antialiasing.render(camera, toDrawingBuffer, props.postprocessing);
         } else if (toDrawingBuffer) {
             this.drawTarget.bind();
 
@@ -338,16 +354,17 @@ export class DrawPass {
         this.webgl.gl.flush();
     }
 
-    render(renderer: Renderer, camera: Camera | StereoCamera, scene: Scene, helper: Helper, toDrawingBuffer: boolean, transparentBackground: boolean, postprocessingProps: PostprocessingProps, markingProps: MarkingProps) {
-        renderer.setTransparentBackground(transparentBackground);
+    render(ctx: RenderContext, props: Props, toDrawingBuffer: boolean) {
+        const { renderer, camera, scene, helper } = ctx;
+        renderer.setTransparentBackground(props.transparentBackground);
         renderer.setDrawingBufferSize(this.colorTarget.getWidth(), this.colorTarget.getHeight());
         renderer.setPixelRatio(this.webgl.pixelRatio);
 
         if (StereoCamera.is(camera)) {
-            this._render(renderer, camera.left, scene, helper, toDrawingBuffer, transparentBackground, postprocessingProps, markingProps);
-            this._render(renderer, camera.right, scene, helper, toDrawingBuffer, transparentBackground, postprocessingProps, markingProps);
+            this._render(renderer, camera.left, scene, helper, toDrawingBuffer, props);
+            this._render(renderer, camera.right, scene, helper, toDrawingBuffer, props);
         } else {
-            this._render(renderer, camera, scene, helper, toDrawingBuffer, transparentBackground, postprocessingProps, markingProps);
+            this._render(renderer, camera, scene, helper, toDrawingBuffer, props);
         }
     }
 

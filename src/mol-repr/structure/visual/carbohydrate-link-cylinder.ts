@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018-2020 mol* contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2018-2022 mol* contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Alexander Rose <alexander.rose@weirdbyte.de>
  */
@@ -19,6 +19,7 @@ import { VisualUpdateState } from '../../util';
 import { VisualContext } from '../../../mol-repr/visual';
 import { Theme } from '../../../mol-theme/theme';
 import { getAltResidueLociFromId } from './util/common';
+import { Sphere3D } from '../../../mol-math/geometry';
 
 function createCarbohydrateLinkCylinderMesh(ctx: VisualContext, structure: Structure, theme: Theme, props: PD.Values<CarbohydrateLinkParams>, mesh?: Mesh) {
     const { links, elements } = structure.carbohydrates;
@@ -43,7 +44,16 @@ function createCarbohydrateLinkCylinderMesh(ctx: VisualContext, structure: Struc
         },
     };
 
-    return createLinkCylinderMesh(ctx, builderProps, props, mesh);
+    const { mesh: m, boundingSphere } = createLinkCylinderMesh(ctx, builderProps, props, mesh);
+
+    if (boundingSphere) {
+        m.setBoundingSphere(boundingSphere);
+    } else if (m.triangleCount > 0) {
+        const sphere = Sphere3D.expand(Sphere3D(), structure.boundary.sphere, 1 * linkSizeFactor);
+        m.setBoundingSphere(sphere);
+    }
+
+    return m;
 }
 
 export const CarbohydrateLinkParams = {
@@ -101,6 +111,8 @@ function getLinkLoci(pickingId: PickingId, structure: Structure, id: number) {
     return EmptyLoci;
 }
 
+const __linkIndicesSet = new Set<number>();
+
 function eachCarbohydrateLink(loci: Loci, structure: Structure, apply: (interval: Interval) => boolean) {
     let changed = false;
     if (!StructureElement.Loci.is(loci)) return false;
@@ -110,11 +122,14 @@ function eachCarbohydrateLink(loci: Loci, structure: Structure, apply: (interval
     for (const { unit, indices } of loci.elements) {
         if (!Unit.isAtomic(unit)) continue;
 
+        __linkIndicesSet.clear();
         OrderedSet.forEach(indices, v => {
-            // TODO avoid duplicate calls to apply
             const linkIndices = getLinkIndices(unit, unit.elements[v]);
             for (let i = 0, il = linkIndices.length; i < il; ++i) {
-                if (apply(Interval.ofSingleton(linkIndices[i]))) changed = true;
+                if (!__linkIndicesSet.has(linkIndices[i])) {
+                    __linkIndicesSet.add(linkIndices[i]);
+                    if (apply(Interval.ofSingleton(linkIndices[i]))) changed = true;
+                }
             }
         });
     }

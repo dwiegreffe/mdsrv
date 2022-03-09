@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018-2019 mol* contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2018-2022 mol* contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Alexander Rose <alexander.rose@weirdbyte.de>
  */
@@ -14,6 +14,7 @@ import { ParamDefinition as PD } from '../../mol-util/param-definition';
 import { ThemeDataContext } from '../theme';
 import { TableLegend } from '../../mol-util/legend';
 import { getAdjustedColorMap } from '../../mol-util/color/color';
+import { getColorMapParams } from '../../mol-util/color/params';
 
 export const MoleculeTypeColors = ColorMap({
     water: 0x386cb0,
@@ -31,7 +32,11 @@ const Description = 'Assigns a color based on the molecule type of a residue.';
 
 export const MoleculeTypeColorThemeParams = {
     saturation: PD.Numeric(0, { min: -6, max: 6, step: 0.1 }),
-    lightness: PD.Numeric(0, { min: -6, max: 6, step: 0.1 })
+    lightness: PD.Numeric(0, { min: -6, max: 6, step: 0.1 }),
+    colors: PD.MappedStatic('default', {
+        'default': PD.EmptyGroup(),
+        'custom': PD.Group(getColorMapParams(MoleculeTypeColors))
+    })
 };
 export type MoleculeTypeColorThemeParams = typeof MoleculeTypeColorThemeParams
 export function getMoleculeTypeColorThemeParams(ctx: ThemeDataContext) {
@@ -53,7 +58,7 @@ export function moleculeTypeColor(colorMap: MoleculeTypeColors, unit: Unit, elem
 }
 
 export function MoleculeTypeColorTheme(ctx: ThemeDataContext, props: PD.Values<MoleculeTypeColorThemeParams>): ColorTheme<MoleculeTypeColorThemeParams> {
-    const colorMap = getAdjustedColorMap(MoleculeTypeColors, props.saturation, props.lightness);
+    const colorMap = getAdjustedColorMap(props.colors.name === 'default' ? MoleculeTypeColors : props.colors.params, props.saturation, props.lightness);
 
     function color(location: Location): Color {
         if (StructureElement.Location.is(location)) {
@@ -70,8 +75,8 @@ export function MoleculeTypeColorTheme(ctx: ThemeDataContext, props: PD.Values<M
         color,
         props,
         description: Description,
-        legend: TableLegend(Object.keys(MoleculeTypeColors).map(name => {
-            return [name, (MoleculeTypeColors as any)[name] as Color] as [string, Color];
+        legend: TableLegend(Object.keys(colorMap).map(name => {
+            return [name, (colorMap as any)[name] as Color] as [string, Color];
         }).concat([['Other/unknown', DefaultMoleculeTypeColor]]))
     };
 }

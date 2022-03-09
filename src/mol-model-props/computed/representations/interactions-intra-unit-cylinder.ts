@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2019-2021 mol* contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2019-2022 mol* contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Alexander Rose <alexander.rose@weirdbyte.de>
  */
@@ -56,17 +56,29 @@ async function createIntraUnitInteractionsCylinderMesh(ctx: VisualContext, unit:
             const sizeB = theme.size.size(location);
             return Math.min(sizeA, sizeB) * sizeFactor;
         },
-        ignore: (edgeIndex: number) => (
-            flag[edgeIndex] === InteractionFlag.Filtered ||
-            // TODO: check all members
-            (!!childUnit && !SortedArray.has(childUnit.elements, unit.elements[members[offsets[a[edgeIndex]]]]))
-        )
+        ignore: (edgeIndex: number) => {
+            if (flag[edgeIndex] === InteractionFlag.Filtered) return true;
+
+            if (childUnit) {
+                const f = a[edgeIndex];
+                for (let i = offsets[f], jl = offsets[f + 1]; i < jl; ++i) {
+                    const e = unit.elements[members[offsets[i]]];
+                    if (!SortedArray.has(childUnit.elements, e)) return true;
+                }
+            }
+
+            return false;
+        }
     };
 
-    const m = createLinkCylinderMesh(ctx, builderProps, props, mesh);
+    const { mesh: m, boundingSphere } = createLinkCylinderMesh(ctx, builderProps, props, mesh);
 
-    const sphere = Sphere3D.expand(Sphere3D(), (childUnit ?? unit).boundary.sphere, 1 * sizeFactor);
-    m.setBoundingSphere(sphere);
+    if (boundingSphere) {
+        m.setBoundingSphere(boundingSphere);
+    } else if (m.triangleCount > 0) {
+        const sphere = Sphere3D.expand(Sphere3D(), (childUnit ?? unit).boundary.sphere, 1 * sizeFactor);
+        m.setBoundingSphere(sphere);
+    }
 
     return m;
 }
@@ -123,6 +135,8 @@ function getInteractionLoci(pickingId: PickingId, structureGroup: StructureGroup
     return EmptyLoci;
 }
 
+const __contactIndicesSet = new Set<number>();
+
 function eachInteraction(loci: Loci, structureGroup: StructureGroup, apply: (interval: Interval) => boolean, isMarking: boolean) {
     let changed = false;
     if (Interactions.isLoci(loci)) {
@@ -156,21 +170,37 @@ function eachInteraction(loci: Loci, structureGroup: StructureGroup, apply: (int
 
         const { offset } = contacts;
         const { offsets: fOffsets, indices: fIndices } = features.elementsIndex;
+        const { members, offsets } = features;
 
-        // TODO: when isMarking, all elements of contact features need to be in the loci
         for (const e of loci.elements) {
             const unitIdx = group.unitIndexMap.get(e.unit.id);
-            if (unitIdx !== undefined) continue;
-            if (isMarking && OrderedSet.size(e.indices) === 1) continue;
+            if (unitIdx === undefined) continue;
 
             OrderedSet.forEach(e.indices, v => {
                 for (let i = fOffsets[v], il = fOffsets[v + 1]; i < il; ++i) {
                     const fI = fIndices[i];
                     for (let j = offset[fI], jl = offset[fI + 1]; j < jl; ++j) {
-                        if (apply(Interval.ofSingleton(unitIdx * groupCount + j))) changed = true;
+                        __contactIndicesSet.add(j);
                     }
                 }
             });
+
+            __contactIndicesSet.forEach(i => {
+                if (isMarking) {
+                    const fA = contacts.a[i];
+                    for (let j = offsets[fA], jl = offsets[fA + 1]; j < jl; ++j) {
+                        if (!OrderedSet.has(e.indices, members[j])) return;
+                    }
+                    const fB = contacts.b[i];
+                    for (let j = offsets[fB], jl = offsets[fB + 1]; j < jl; ++j) {
+                        if (!OrderedSet.has(e.indices, members[j])) return;
+                    }
+                }
+
+                if (apply(Interval.ofSingleton(unitIdx * groupCount + i))) changed = true;
+            });
+
+            __contactIndicesSet.clear();
         }
     }
     return changed;

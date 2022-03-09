@@ -147,6 +147,8 @@ export namespace TextureMesh {
         const boundingSphere = calculateTransformBoundingSphere(invariantBoundingSphere, transform.aTransform.ref.value, instanceCount);
 
         return {
+            dGeometryType: ValueCell.create('textureMesh'),
+
             uGeoTexDim: textureMesh.geoTextureDim,
             tPosition: textureMesh.vertexTexture,
             tGroup: textureMesh.groupTexture,
@@ -165,14 +167,13 @@ export namespace TextureMesh {
             ...transform,
 
             ...BaseGeometry.createValues(props, counts),
-            dDoubleSided: ValueCell.create(props.doubleSided),
+            uDoubleSided: ValueCell.create(props.doubleSided),
             dFlatShaded: ValueCell.create(props.flatShaded),
             dFlipSided: ValueCell.create(props.flipSided),
             dIgnoreLight: ValueCell.create(props.ignoreLight),
             dXrayShaded: ValueCell.create(props.xrayShaded),
             uBumpFrequency: ValueCell.create(props.bumpFrequency),
             uBumpAmplitude: ValueCell.create(props.bumpAmplitude),
-            dGeoTexture: ValueCell.create(true),
 
             meta: ValueCell.create(textureMesh.meta),
         };
@@ -186,7 +187,7 @@ export namespace TextureMesh {
 
     function updateValues(values: TextureMeshValues, props: PD.Values<Params>) {
         BaseGeometry.updateValues(values, props);
-        ValueCell.updateIfChanged(values.dDoubleSided, props.doubleSided);
+        ValueCell.updateIfChanged(values.uDoubleSided, props.doubleSided);
         ValueCell.updateIfChanged(values.dFlatShaded, props.flatShaded);
         ValueCell.updateIfChanged(values.dFlipSided, props.flipSided);
         ValueCell.updateIfChanged(values.dIgnoreLight, props.ignoreLight);

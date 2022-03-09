@@ -1,42 +1,50 @@
 [
   {
-    "timestamp": 1639483490792,
+    "timestamp": 1646757185655,
     "id": "9ddf37db-a249-4f6e-b542-9626b1cf6182",
-    "name": "2zt9-4dg3 - Alignment",
-    "description": "",
-    "version": "3.0.0-dev.3",
+    "name": "4gd3 - 2zt9",
+    "description": "Alignment Matching",
+    "version": "3.3.1",
     "isSticky": true
   },
   {
-    "timestamp": 1639483528916,
+    "timestamp": 1646757455398,
     "id": "80de2863-618b-4e4d-b811-316027fed991",
-    "name": "md_1u19 - Trajectory Streaming - Distance Line Plot",
-    "description": "",
-    "version": "3.0.0-dev.3",
+    "name": "md_1u19",
+    "description": "Trajectory Streaming - Distance Plot",
+    "version": "3.3.1",
     "isSticky": true
   },
   {
-    "timestamp": 1639483579520,
+    "timestamp": 1646757586837,
     "id": "b7871196-f9a2-40e0-86dc-ccc6c11c7304",
-    "name": "eq7_1_apo - Trajectory Streaming - Angle Line Plot",
-    "description": "",
-    "version": "3.0.0-dev.3",
+    "name": "eq7_1_apo",
+    "description": "Trajectory Streaming - Angle Plot",
+    "version": "3.3.1",
     "isSticky": true
   },
   {
-    "timestamp": 1639483762357,
+    "timestamp": 1646757586838,
     "id": "d462eb69-ca31-44c9-8d9b-42e159dc1f0e",
-    "name": "md_1u19 - Trajectory Local - Distance Line Plot",
-    "description": "",
-    "version": "3.0.0-dev.3",
+    "name": "md_1u19",
+    "description": "Trajectory Local - Distance Plot",
+    "version": "3.3.1",
     "isSticky": true
   },
   {
-    "timestamp": 1640094217541,
+    "timestamp": 1646757764822,
     "id": "f010cb1f-44ed-4938-8e56-610936224006",
     "name": "Trajectory Stream 4.5GB XTC",
     "description": "",
-    "version": "3.0.0-dev.3",
+    "version": "3.3.1",
+    "isSticky": true
+  },
+  {
+    "timestamp": 1646757764823,
+    "id": "a491ac86-989a-416f-96e4-85fae55c4a2f",
+    "name": "Cholesterol",
+    "description": "Insertion and Distance Plot",
+    "version": "3.3.1",
     "isSticky": true
   }
 ]

@@ -13,12 +13,14 @@ import cors from 'cors';
 import * as bodyParser from 'body-parser';
 import * as fs from 'fs';
 import * as path from 'path';
+import fetch from 'node-fetch';
 import { swaggerUiIndexHandler, swaggerUiAssetsHandler } from './swagger-ui';
 import { makeDir } from './helper/make-dir';
 import { getConfig } from './config';
 import { UUID } from './helper/uuid';
 import { shortcutIconLink, getSchema } from './api-schema';
 import { getData, getFrameData } from './helper/helper';
+import { rejects } from 'assert';
 
 const Config = getConfig();
 
@@ -150,6 +152,61 @@ app.post(mapPath('/set/session'), (req, res) => {
 });
 
 // TRAJECTORY
+
+app.get(mapPath(`/upload/trajectory/:url/:name/:description`), (req, res) => {
+    console.log('UPLOAD TRAJECTORY', req.params.url, req.params.name, req.params.description);
+    const index = readIndex('trajectory') as TrajectoryIndex;
+
+    const url: string = req.params.url;
+    const name = (req.params.name as string || new Date().toUTCString());
+    const description = (req.params.description as string || '');
+
+    const fn = `${Config.working_folder}/trajectory/${name}.xtc`;
+
+    if (fs.existsSync(fn)) {
+        res.write('File name already exists. Pick different file name.');
+        console.log(`File name ${name} already exists. Return`);
+        res.end();
+        return;
+    }
+
+    const writeableStream = fs.createWriteStream(fn);
+
+    fetch(url)
+        .then(response => {
+            if (response.status === 404) {
+                throw new Error(`${response.status} file not found (URL)`);
+            }
+            return response.body;
+        })
+        .then(body => {
+            console.log(body.readable);
+
+            body.on('data', (chunk: Buffer) => {
+                writeableStream.write(chunk);
+            });
+
+            body.on('end', () => {
+                index.push({ timestamp: +new Date(), id: name, name, description });
+                writeIndex('trajectory', index);
+                console.log(`Trajectory ${name}.xtc uploaded`);
+                res.write('Trajectory uploaded.');
+                res.end();
+            });
+
+            body.on('error', error => {
+                rejects(error);
+                res.end();
+            });
+        })
+        .catch(error => {
+            console.log('Error while fetching:');
+            console.log(error);
+            fs.unlinkSync(fn);
+            res.write(`${error}`);
+            res.end();
+        });
+});
 
 app.get(mapPath(`/get/trajectory/:id/starts`), (req, res) => {
     const id: string = req.params.id || '';

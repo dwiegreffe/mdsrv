@@ -16,16 +16,17 @@ import { ParamDefinition as PD } from '../../mol-util/param-definition';
 import { RemoteEntry } from '../../mol-plugin-ui/state/snapshots';
 import { urlCombine } from '../../mol-util/url';
 import { OrderedMap } from 'immutable';
+import { DefaultSessionServerURL } from '../remote-session/controls';
 
 require('./xtc-stream.scss');
 
-export const DefaultTrajectoryServerUrl = 'https://remote.sca-ds.de/';
+export const DefaultTrajectoryServerUrl = DefaultSessionServerURL;
 
 export class XTCStreamTrajectory extends CollapsableControls {
     defaultState() {
         return {
             isCollapsed: true,
-            header: 'XTC Stream Trajectory',
+            header: 'Match Stream Trajectory',
             brand: { accent: 'gray' as const, svg: ShowChart },
             isHidden: false,
             hoverInfo: 'Add a trajectory from a remote server to a structure'
@@ -186,7 +187,11 @@ export class XTCStreamControls extends PurePluginUIComponent<XTCStreamControlPro
 
     apply = async () => {
         const entry = this.state.entries.get(this.state.trajectoryId);
-        this.plugin.runTask(this.addStreamTrajectory(entry));
+        if (!entry) {
+            this.plugin.log.error('Error, trajectory could not be matched');
+        } else {
+            this.plugin.runTask(this.addStreamTrajectory(entry));
+        }
     };
 
     render() {

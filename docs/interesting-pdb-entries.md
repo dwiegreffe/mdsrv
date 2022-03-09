@@ -29,6 +29,19 @@
 * Long linear sugar chain (4HG6)
 * Anisotropic B-factors/Ellipsoids (1EJG)
 * NOS bridges (LYS-CSO in 7B0L, 6ZWJ, 6ZWH)
+* Non-polymer components in polymer entities
+    * PN2 in 1F80
+    * ACE (many, e.g. 5AGU, 1E1X)
+    * ACY in 7ABY
+    * NH2 (many, e.g. 6Y13)
+* Ligands with many rings
+    * STU (e.g. 1U59) - many fused rings
+    * HT (e.g. 127D) - rings connected by a single bond
+    * J2C (e.g. 7EFJ) - rings connected by a single atom
+    * RBF (e.g. 7QF2) - three linearly fused rings
+    * TA1 (e.g. 1JFF) - many fused rings (incl. a 8-member rings)
+    * BPA (e.g. 1JDG) - many fused rings
+    * CLR (e.g. 3GKI) - four fused rings
 
 Assembly symmetries
 * 5M30 (Assembly 1, C3 local and pseudo)

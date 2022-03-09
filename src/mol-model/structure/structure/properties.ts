@@ -126,6 +126,7 @@ const coarse = {
     z: atom.z,
 
     asym_id: p(l => !Unit.isCoarse(l.unit) ? notCoarse() : l.unit.coarseElements.asym_id.value(l.element)),
+    entity_id: p(l => !Unit.isCoarse(l.unit) ? notCoarse() : l.unit.coarseElements.entity_id.value(l.element)),
     seq_id_begin: p(l => !Unit.isCoarse(l.unit) ? notCoarse() : l.unit.coarseElements.seq_id_begin.value(l.element)),
     seq_id_end: p(l => !Unit.isCoarse(l.unit) ? notCoarse() : l.unit.coarseElements.seq_id_end.value(l.element)),
 
@@ -162,7 +163,7 @@ const entity = {
     pdbx_ec: p(l => l.unit.model.entities.data.pdbx_ec.value(eK(l))),
 
     subtype: p(l => l.unit.model.entities.subtype.value(eK(l))),
-    prd_id: p(l => l.unit.model.entities.prd_id.value(eK(l))),
+    prd_id: p(l => l.unit.model.entities.prd_id?.value(eK(l)) ?? ''),
 };
 
 const _emptyList: any[] = [];

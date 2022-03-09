@@ -16,7 +16,7 @@ precision highp sampler2D;
 #include common_clip
 #include texture3d_from_2d_linear
 
-#ifdef dGeoTexture
+#ifdef dGeometryType_textureMesh
     uniform vec2 uGeoTexDim;
     uniform sampler2D tPosition;
     uniform sampler2D tGroup;
@@ -39,15 +39,17 @@ void main(){
     #include assign_color_varying
     #include clip_instance
 
-    #ifdef dGeoTexture
+    #ifdef dGeometryType_textureMesh
         vec3 normal = readFromTexture(tNormal, VertexID, uGeoTexDim).xyz;
     #else
         vec3 normal = aNormal;
     #endif
     mat3 normalMatrix = transpose3(inverse3(mat3(modelView)));
     vec3 transformedNormal = normalize(normalMatrix * normalize(normal));
-    #if defined(dFlipSided) && !defined(dDoubleSided) // TODO checking dDoubleSided should not be required, ASR
-        transformedNormal = -transformedNormal;
+    #if defined(dFlipSided)
+        if (!uDoubleSided) { // TODO checking uDoubleSided should not be required, ASR
+            transformedNormal = -transformedNormal;
+        }
     #endif
     vNormal = transformedNormal;
 }

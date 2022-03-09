@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2019-2020 mol* contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2019-2022 mol* contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Alexander Rose <alexander.rose@weirdbyte.de>
  */
@@ -9,6 +9,7 @@ import { WaterNames, PolymerNames } from '../../../mol-model/structure/model/typ
 import { SetUtils } from '../../../mol-util/set';
 import { BasicSchema } from '../basic/schema';
 import { mmCIF_chemComp_schema } from '../../../mol-io/reader/cif/schema/mmcif-extras';
+import { SaccharideCompIdMap } from '../../../mol-model/structure/structure/carbohydrates/constants';
 
 type Component = Table.Row<Pick<mmCIF_chemComp_schema, 'id' | 'name' | 'type'>>
 
@@ -30,7 +31,7 @@ const DnaAtomIdsList = [
 
 /** Used to reduce false positives for atom name-based type guessing */
 const NonPolymerNames = new Set([
-    'FMN', 'NCN', 'FNS', 'FMA' // Mononucleotides
+    'FMN', 'NCN', 'FNS', 'FMA', 'ATP', 'ADP', 'AMP', 'GTP', 'GDP', 'GMP', // Mononucleotides
 ]);
 
 const StandardComponents = (function () {
@@ -156,8 +157,10 @@ export class ComponentBuilder {
                 this.set(StandardComponents.get(compId)!);
             } else if (WaterNames.has(compId)) {
                 this.set({ id: compId, name: 'WATER', type: 'non-polymer' });
-            } else if (NonPolymerNames.has(compId)) {
+            } else if (NonPolymerNames.has(compId.toUpperCase())) {
                 this.set({ id: compId, name: this.namesMap.get(compId) || compId, type: 'non-polymer' });
+            } else if (SaccharideCompIdMap.has(compId.toUpperCase())) {
+                this.set({ id: compId, name: this.namesMap.get(compId) || compId, type: 'saccharide' });
             } else {
                 const atomIds = this.getAtomIds(index);
                 if (atomIds.size === 1 && CharmmIonComponents.has(compId)) {

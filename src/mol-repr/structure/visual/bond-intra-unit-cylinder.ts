@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018-2021 mol* contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2018-2022 mol* contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Alexander Rose <alexander.rose@weirdbyte.de>
  * @author David Sehnal <david.sehnal@gmail.com>
@@ -79,23 +79,27 @@ function getIntraUnitBondCylinderBuilderProps(unit: Unit.Atomic, structure: Stru
     };
 
     const { elementRingIndices, elementAromaticRingIndices } = unit.rings;
+    const deloTriplets = aromaticBonds ? unit.resonance.delocalizedTriplets : undefined;
 
     return {
         linkCount: edgeCount * 2,
         referencePosition: (edgeIndex: number) => {
             let aI = a[edgeIndex], bI = b[edgeIndex];
 
+            const rI = deloTriplets?.getThirdElement(aI, bI);
+            if (rI !== undefined) return pos(elements[rI], vRef);
+
             if (aI > bI) [aI, bI] = [bI, aI];
             if (offset[aI + 1] - offset[aI] === 1) [aI, bI] = [bI, aI];
 
-            const aR = elementRingIndices.get(aI);
+            const aR = elementAromaticRingIndices.get(aI) || elementRingIndices.get(aI);
             let maxSize = 0;
 
             for (let i = offset[aI], il = offset[aI + 1]; i < il; ++i) {
                 const _bI = b[i];
                 if (_bI !== bI && _bI !== aI) {
                     if (aR) {
-                        const _bR = elementRingIndices.get(_bI);
+                        const _bR = elementAromaticRingIndices.get(_bI) || elementRingIndices.get(_bI);
                         if (!_bR) continue;
 
                         const size = arrayIntersectionSize(aR, _bR);
@@ -145,8 +149,10 @@ function getIntraUnitBondCylinderBuilderProps(unit: Unit.Atomic, structure: Stru
                 if (isBondType(f, BondType.Flag.Aromatic) || (arCount && !ignoreComputedAromatic)) {
                     if (arCount === 2) {
                         return LinkStyle.MirroredAromatic;
-                    } else {
+                    } else if (arCount === 1 || deloTriplets?.getThirdElement(aI, bI)) {
                         return LinkStyle.Aromatic;
+                    } else {
+                        // case for bonds between two aromatic rings
                     }
                 }
             }
@@ -172,10 +178,14 @@ function createIntraUnitBondCylinderImpostors(ctx: VisualContext, unit: Unit, st
     if (child && !childUnit) return Cylinders.createEmpty(cylinders);
 
     const builderProps = getIntraUnitBondCylinderBuilderProps(unit, structure, theme, props);
-    const c = createLinkCylinderImpostors(ctx, builderProps, props, cylinders);
+    const { cylinders: c, boundingSphere } = createLinkCylinderImpostors(ctx, builderProps, props, cylinders);
 
-    const sphere = Sphere3D.expand(Sphere3D(), (childUnit ?? unit).boundary.sphere, 1 * props.sizeFactor);
-    c.setBoundingSphere(sphere);
+    if (boundingSphere) {
+        c.setBoundingSphere(boundingSphere);
+    } else if (c.cylinderCount > 0) {
+        const sphere = Sphere3D.expand(Sphere3D(), (childUnit ?? unit).boundary.sphere, 1 * props.sizeFactor);
+        c.setBoundingSphere(sphere);
+    }
 
     return c;
 }
@@ -189,10 +199,14 @@ function createIntraUnitBondCylinderMesh(ctx: VisualContext, unit: Unit, structu
     if (child && !childUnit) return Mesh.createEmpty(mesh);
 
     const builderProps = getIntraUnitBondCylinderBuilderProps(unit, structure, theme, props);
-    const m = createLinkCylinderMesh(ctx, builderProps, props, mesh);
+    const { mesh: m, boundingSphere } = createLinkCylinderMesh(ctx, builderProps, props, mesh);
 
-    const sphere = Sphere3D.expand(Sphere3D(), (childUnit ?? unit).boundary.sphere, 1 * props.sizeFactor);
-    m.setBoundingSphere(sphere);
+    if (boundingSphere) {
+        m.setBoundingSphere(boundingSphere);
+    } else if (m.triangleCount > 0) {
+        const sphere = Sphere3D.expand(Sphere3D(), (childUnit ?? unit).boundary.sphere, 1 * props.sizeFactor);
+        m.setBoundingSphere(sphere);
+    }
 
     return m;
 }

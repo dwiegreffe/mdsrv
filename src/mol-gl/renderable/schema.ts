@@ -135,12 +135,6 @@ export const GlobalUniformSchema = {
 
     uTransparentBackground: UniformSpec('b'),
 
-    uClipObjectType: UniformSpec('i[]'),
-    uClipObjectInvert: UniformSpec('b[]'),
-    uClipObjectPosition: UniformSpec('v3[]'),
-    uClipObjectRotation: UniformSpec('v4[]'),
-    uClipObjectScale: UniformSpec('v3[]'),
-
     uLightDirection: UniformSpec('v3[]'),
     uLightColor: UniformSpec('v3[]'),
     uAmbientColor: UniformSpec('v3'),
@@ -161,6 +155,8 @@ export const GlobalUniformSchema = {
 
     uRenderWboit: UniformSpec('b'),
     uMarkingDepthTest: UniformSpec('b'),
+    uMarkingType: UniformSpec('i'),
+    uPickType: UniformSpec('i'),
 } as const;
 export type GlobalUniformSchema = typeof GlobalUniformSchema
 export type GlobalUniformValues = Values<GlobalUniformSchema>
@@ -186,7 +182,7 @@ export const ColorSchema = {
     tColor: TextureSpec('image-uint8', 'rgb', 'ubyte', 'nearest'),
     tPalette: TextureSpec('image-uint8', 'rgb', 'ubyte', 'nearest'),
     tColorGrid: TextureSpec('texture', 'rgb', 'ubyte', 'linear'),
-    dColorType: DefineSpec('string', ['uniform', 'attribute', 'instance', 'group', 'groupInstance', 'vertex', 'vertexInstance', 'volume', 'volumeInstance']),
+    dColorType: DefineSpec('string', ['uniform', 'attribute', 'instance', 'group', 'groupInstance', 'vertex', 'vertexInstance', 'volume', 'volumeInstance', 'direct']),
     dUsePalette: DefineSpec('boolean'),
 } as const;
 export type ColorSchema = typeof ColorSchema
@@ -207,7 +203,6 @@ export const MarkerSchema = {
     uMarker: UniformSpec('f'),
     uMarkerTexDim: UniformSpec('v2'),
     tMarker: TextureSpec('image-uint8', 'alpha', 'ubyte', 'nearest'),
-    dMarkerType: DefineSpec('string', ['uniform', 'groupInstance']),
     markerAverage: ValueSpec('number'),
     markerStatus: ValueSpec('number'),
 } as const;
@@ -255,9 +250,6 @@ export type SubstanceSchema = typeof SubstanceSchema
 export type SubstanceValues = Values<SubstanceSchema>
 
 export const ClippingSchema = {
-    dClipObjectCount: DefineSpec('number'),
-    dClipVariant: DefineSpec('string', ['instance', 'pixel']),
-
     uClippingTexDim: UniformSpec('v2'),
     tClipping: TextureSpec('image-uint8', 'alpha', 'ubyte', 'nearest'),
     dClipping: DefineSpec('boolean'),
@@ -266,6 +258,8 @@ export type ClippingSchema = typeof ClippingSchema
 export type ClippingValues = Values<ClippingSchema>
 
 export const BaseSchema = {
+    dGeometryType: DefineSpec('string', ['cylinders', 'directVolume', 'image', 'lines', 'mesh', 'points', 'spheres', 'text', 'textureMesh']),
+
     ...ColorSchema,
     ...MarkerSchema,
     ...OverpaintSchema,
@@ -274,6 +268,14 @@ export const BaseSchema = {
     ...ClippingSchema,
 
     dLightCount: DefineSpec('number'),
+
+    dClipObjectCount: DefineSpec('number'),
+    dClipVariant: DefineSpec('string', ['instance', 'pixel']),
+    uClipObjectType: UniformSpec('i[]'),
+    uClipObjectInvert: UniformSpec('b[]'),
+    uClipObjectPosition: UniformSpec('v3[]'),
+    uClipObjectRotation: UniformSpec('v4[]'),
+    uClipObjectScale: UniformSpec('v3[]'),
 
     aInstance: AttributeSpec('float32', 1, 1),
     /**

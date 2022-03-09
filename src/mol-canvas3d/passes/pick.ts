@@ -5,14 +5,14 @@
  */
 
 import { PickingId } from '../../mol-geo/geometry/picking';
-import { Renderer } from '../../mol-gl/renderer';
+import { PickType, Renderer } from '../../mol-gl/renderer';
 import { Scene } from '../../mol-gl/scene';
 import { WebGLContext } from '../../mol-gl/webgl/context';
 import { GraphicsRenderVariant } from '../../mol-gl/webgl/render-item';
 import { RenderTarget } from '../../mol-gl/webgl/render-target';
 import { Vec3 } from '../../mol-math/linear-algebra';
 import { spiral2d } from '../../mol-math/misc';
-import { decodeFloatRGB, unpackRGBAToDepth } from '../../mol-util/float-packing';
+import { unpackRGBToInt, unpackRGBAToDepth } from '../../mol-util/number-packing';
 import { Camera, ICamera } from '../camera';
 import { StereoCamera } from '../camera/stereo';
 import { cameraUnproject } from '../camera/util';
@@ -64,35 +64,35 @@ export class PickPass {
         }
     }
 
-    private renderVariant(renderer: Renderer, camera: ICamera, scene: Scene, helper: Helper, variant: GraphicsRenderVariant) {
+    private renderVariant(renderer: Renderer, camera: ICamera, scene: Scene, helper: Helper, variant: GraphicsRenderVariant, pickType: number) {
         const depth = this.drawPass.depthTexturePrimitives;
         renderer.clear(false);
 
         renderer.update(camera);
-        renderer.renderPick(scene.primitives, camera, variant, null);
-        renderer.renderPick(scene.volumes, camera, variant, depth);
-        renderer.renderPick(helper.handle.scene, camera, variant, null);
+        renderer.renderPick(scene.primitives, camera, variant, null, pickType);
+        renderer.renderPick(scene.volumes, camera, variant, depth, pickType);
+        renderer.renderPick(helper.handle.scene, camera, variant, null, pickType);
 
         if (helper.camera.isEnabled) {
             helper.camera.update(camera);
             renderer.update(helper.camera.camera);
-            renderer.renderPick(helper.camera.scene, helper.camera.camera, variant, null);
+            renderer.renderPick(helper.camera.scene, helper.camera.camera, variant, null, pickType);
         }
     }
 
     render(renderer: Renderer, camera: ICamera, scene: Scene, helper: Helper) {
         this.objectPickTarget.bind();
-        this.renderVariant(renderer, camera, scene, helper, 'pickObject');
+        this.renderVariant(renderer, camera, scene, helper, 'pick', PickType.Object);
 
         this.instancePickTarget.bind();
-        this.renderVariant(renderer, camera, scene, helper, 'pickInstance');
+        this.renderVariant(renderer, camera, scene, helper, 'pick', PickType.Instance);
 
         this.groupPickTarget.bind();
-        this.renderVariant(renderer, camera, scene, helper, 'pickGroup');
+        this.renderVariant(renderer, camera, scene, helper, 'pick', PickType.Group);
         // printTexture(this.webgl, this.groupPickTarget.texture, { id: 'group' })
 
         this.depthPickTarget.bind();
-        this.renderVariant(renderer, camera, scene, helper, 'depth');
+        this.renderVariant(renderer, camera, scene, helper, 'depth', PickType.None);
     }
 }
 
@@ -174,7 +174,7 @@ export class PickHelper {
 
     private getId(x: number, y: number, buffer: Uint8Array) {
         const idx = this.getBufferIdx(x, y);
-        return decodeFloatRGB(buffer[idx], buffer[idx + 1], buffer[idx + 2]);
+        return unpackRGBToInt(buffer[idx], buffer[idx + 1], buffer[idx + 2]);
     }
 
     private render(camera: Camera | StereoCamera) {

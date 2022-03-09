@@ -42,6 +42,7 @@ import { parseXyz } from '../../mol-io/reader/xyz/parser';
 import { trajectoryFromXyz } from '../../mol-model-formats/structure/xyz';
 import { parseSdf } from '../../mol-io/reader/sdf/parser';
 import { trajectoryFromSdf } from '../../mol-model-formats/structure/sdf';
+import { assertUnreachable } from '../../mol-util/type-helpers';
 import { urlCombine } from '../../mol-util/url';
 import { createModels } from '../../mol-model-formats/structure/basic/parser';
 
@@ -897,7 +898,7 @@ const StructureComplexElement = PluginStateTransform.BuiltIn({
             case 'atomic-het': query = Queries.internal.atomicHet(); label = 'HET Groups/Ligands'; break;
             case 'spheres': query = Queries.internal.spheres(); label = 'Coarse Spheres'; break;
 
-            default: throw new Error(`${params.type} is a not valid complex element.`);
+            default: assertUnreachable(params.type);
         }
 
         const result = query(new QueryContext(a.data));
@@ -969,7 +970,7 @@ async function attachModelProps(model: Model, ctx: PluginContext, taskCtx: Runti
     const propertyCtx = { runtime: taskCtx, assetManager: ctx.managers.asset };
     const { autoAttach, properties } = params;
     for (const name of Object.keys(properties)) {
-        const property = ctx.customModelProperties.get(name);
+        const property = ctx.customModelProperties.get(name)!;
         const props = properties[name];
         if (autoAttach.includes(name) || property.isHidden) {
             try {
@@ -1024,7 +1025,7 @@ async function attachStructureProps(structure: Structure, ctx: PluginContext, ta
     const propertyCtx = { runtime: taskCtx, assetManager: ctx.managers.asset };
     const { autoAttach, properties } = params;
     for (const name of Object.keys(properties)) {
-        const property = ctx.customStructureProperties.get(name);
+        const property = ctx.customStructureProperties.get(name)!;
         const props = properties[name];
         if (autoAttach.includes(name) || property.isHidden) {
             try {

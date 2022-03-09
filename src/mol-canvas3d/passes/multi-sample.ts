@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2019-2021 mol* contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2019-2022 mol* contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Alexander Rose <alexander.rose@weirdbyte.de>
  */
@@ -50,8 +50,8 @@ function getComposeRenderable(ctx: WebGLContext, colorTexture: Texture): Compose
 }
 
 export const MultiSampleParams = {
-    mode: PD.Select('off', [['off', 'Off'], ['on', 'On'], ['temporal', 'Temporal']]),
-    sampleLevel: PD.Numeric(2, { min: 0, max: 5, step: 1 }),
+    mode: PD.Select('temporal', [['off', 'Off'], ['on', 'On'], ['temporal', 'Temporal']]),
+    sampleLevel: PD.Numeric(2, { min: 0, max: 5, step: 1 }, { description: 'Take level^2 samples.' }),
 };
 export type MultiSampleProps = PD.Values<typeof MultiSampleParams>
 
@@ -59,6 +59,14 @@ type Props = {
     multiSample: MultiSampleProps
     postprocessing: PostprocessingProps
     marking: MarkingProps
+    transparentBackground: boolean;
+}
+
+type RenderContext = {
+    renderer: Renderer;
+    camera: Camera | StereoCamera;
+    scene: Scene;
+    helper: Helper;
 }
 
 export class MultiSamplePass {
@@ -97,12 +105,12 @@ export class MultiSamplePass {
         }
     }
 
-    render(sampleIndex: number, renderer: Renderer, camera: Camera | StereoCamera, scene: Scene, helper: Helper, toDrawingBuffer: boolean, transparentBackground: boolean, props: Props) {
-        if (props.multiSample.mode === 'temporal') {
-            return this.renderTemporalMultiSample(sampleIndex, renderer, camera, scene, helper, toDrawingBuffer, transparentBackground, props);
+    render(sampleIndex: number, ctx: RenderContext, props: Props, toDrawingBuffer: boolean, forceOn: boolean) {
+        if (props.multiSample.mode === 'temporal' && !forceOn) {
+            return this.renderTemporalMultiSample(sampleIndex, ctx, props, toDrawingBuffer);
         } else {
-            this.renderMultiSample(renderer, camera, scene, helper, toDrawingBuffer, transparentBackground, props);
-            return sampleIndex;
+            this.renderMultiSample(ctx, toDrawingBuffer, props);
+            return -2;
         }
     }
 
@@ -114,7 +122,8 @@ export class MultiSamplePass {
         }
     }
 
-    private renderMultiSample(renderer: Renderer, camera: Camera | StereoCamera, scene: Scene, helper: Helper, toDrawingBuffer: boolean, transparentBackground: boolean, props: Props) {
+    private renderMultiSample(ctx: RenderContext, toDrawingBuffer: boolean, props: Props) {
+        const { camera } = ctx;
         const { compose, composeTarget, drawPass, webgl } = this;
         const { gl, state } = webgl;
 
@@ -148,7 +157,15 @@ export class MultiSamplePass {
             ValueCell.update(compose.values.uWeight, sampleWeight);
 
             // render scene
-            drawPass.render(renderer, camera, scene, helper, false, transparentBackground, props.postprocessing, props.marking);
+            if (i === 0) {
+                drawPass.postprocessing.setOcclusionOffset(0, 0);
+            } else {
+                drawPass.postprocessing.setOcclusionOffset(
+                    offset[0] / width,
+                    offset[1] / height
+                );
+            }
+            drawPass.render(ctx, props, false);
 
             // compose rendered scene with compose target
             composeTarget.bind();
@@ -166,6 +183,8 @@ export class MultiSamplePass {
             compose.render();
         }
 
+        drawPass.postprocessing.setOcclusionOffset(0, 0);
+
         ValueCell.update(compose.values.uWeight, 1.0);
         ValueCell.update(compose.values.tColor, composeTarget.texture);
         compose.update();
@@ -181,7 +200,8 @@ export class MultiSamplePass {
         camera.update();
     }
 
-    private renderTemporalMultiSample(sampleIndex: number, renderer: Renderer, camera: Camera | StereoCamera, scene: Scene, helper: Helper, toDrawingBuffer: boolean, transparentBackground: boolean, props: Props) {
+    private renderTemporalMultiSample(sampleIndex: number, ctx: RenderContext, props: Props, toDrawingBuffer: boolean) {
+        const { camera } = ctx;
         const { compose, composeTarget, holdTarget, drawPass, webgl } = this;
         const { gl, state } = webgl;
 
@@ -198,7 +218,7 @@ export class MultiSamplePass {
         const sampleWeight = 1.0 / offsetList.length;
 
         if (sampleIndex === -1) {
-            drawPass.render(renderer, camera, scene, helper, false, transparentBackground, props.postprocessing, props.marking);
+            drawPass.render(ctx, props, false);
             ValueCell.update(compose.values.uWeight, 1.0);
             ValueCell.update(compose.values.tColor, drawPass.getColorTarget(props.postprocessing).texture);
             compose.update();
@@ -226,7 +246,15 @@ export class MultiSamplePass {
                 camera.update();
 
                 // render scene
-                drawPass.render(renderer, camera, scene, helper, false, transparentBackground, props.postprocessing, props.marking);
+                if (sampleIndex === 0) {
+                    drawPass.postprocessing.setOcclusionOffset(0, 0);
+                } else {
+                    drawPass.postprocessing.setOcclusionOffset(
+                        offset[0] / width,
+                        offset[1] / height
+                    );
+                }
+                drawPass.render(ctx, props, false);
 
                 // compose rendered scene with compose target
                 composeTarget.bind();
@@ -247,6 +275,8 @@ export class MultiSamplePass {
                 if (sampleIndex >= offsetList.length) break;
             }
         }
+
+        drawPass.postprocessing.setOcclusionOffset(0, 0);
 
         this.bindOutputTarget(toDrawingBuffer);
         gl.viewport(x, y, width, height);
@@ -281,23 +311,23 @@ const JitterVectors = [
         [0, 0]
     ],
     [
-        [4, 4], [-4, -4]
+        [0, 0], [-4, -4]
     ],
     [
-        [-2, -6], [6, -2], [-6, 2], [2, 6]
+        [0, 0], [6, -2], [-6, 2], [2, 6]
     ],
     [
-        [1, -3], [-1, 3], [5, 1], [-3, -5],
+        [0, 0], [-1, 3], [5, 1], [-3, -5],
         [-5, 5], [-7, -1], [3, 7], [7, -7]
     ],
     [
-        [1, 1], [-1, -3], [-3, 2], [4, -1],
+        [0, 0], [-1, -3], [-3, 2], [4, -1],
         [-5, -2], [2, 5], [5, 3], [3, -5],
         [-2, 6], [0, -7], [-4, -6], [-6, 4],
         [-8, 0], [7, -4], [6, 7], [-7, -8]
     ],
     [
-        [-4, -7], [-7, -5], [-3, -5], [-5, -4],
+        [0, 0], [-7, -5], [-3, -5], [-5, -4],
         [-1, -4], [-2, -2], [-6, -1], [-4, 0],
         [-7, 1], [-1, 2], [-6, 3], [-3, 3],
         [-7, 6], [-3, 6], [-5, 7], [-1, 7],
@@ -324,8 +354,10 @@ export class MultiSampleHelper {
         return props.mode === 'temporal' ? this.sampleIndex !== -2 : false;
     }
 
-    render(renderer: Renderer, camera: Camera | StereoCamera, scene: Scene, helper: Helper, toDrawingBuffer: boolean, transparentBackground: boolean, props: Props) {
-        this.sampleIndex = this.multiSamplePass.render(this.sampleIndex, renderer, camera, scene, helper, toDrawingBuffer, transparentBackground, props);
+    /** Return `true` while more samples are needed */
+    render(ctx: RenderContext, props: Props, toDrawingBuffer: boolean, forceOn?: boolean) {
+        this.sampleIndex = this.multiSamplePass.render(this.sampleIndex, ctx, props, toDrawingBuffer, !!forceOn);
+        return this.sampleIndex < 0;
     }
 
     constructor(private multiSamplePass: MultiSamplePass) {

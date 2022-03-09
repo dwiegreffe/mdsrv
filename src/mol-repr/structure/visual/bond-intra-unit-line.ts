@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020-2021 mol* contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2020-2022 mol* contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Alexander Rose <alexander.rose@weirdbyte.de>
  */
@@ -52,23 +52,27 @@ function createIntraUnitBondLines(ctx: VisualContext, unit: Unit, structure: Str
     const pos = unit.conformation.invariantPosition;
 
     const { elementRingIndices, elementAromaticRingIndices } = unit.rings;
+    const deloTriplets = aromaticBonds ? unit.resonance.delocalizedTriplets : undefined;
 
     const builderProps: LinkBuilderProps = {
         linkCount: edgeCount * 2,
         referencePosition: (edgeIndex: number) => {
             let aI = a[edgeIndex], bI = b[edgeIndex];
 
+            const rI = deloTriplets?.getThirdElement(aI, bI);
+            if (rI !== undefined) return pos(elements[rI], vRef);
+
             if (aI > bI) [aI, bI] = [bI, aI];
             if (offset[aI + 1] - offset[aI] === 1) [aI, bI] = [bI, aI];
 
-            const aR = elementRingIndices.get(aI);
+            const aR = elementAromaticRingIndices.get(aI) || elementRingIndices.get(aI);
             let maxSize = 0;
 
             for (let i = offset[aI], il = offset[aI + 1]; i < il; ++i) {
                 const _bI = b[i];
                 if (_bI !== bI && _bI !== aI) {
                     if (aR) {
-                        const _bR = elementRingIndices.get(_bI);
+                        const _bR = elementAromaticRingIndices.get(_bI) || elementRingIndices.get(_bI);
                         if (!_bR) continue;
 
                         const size = arrayIntersectionSize(aR, _bR);
@@ -106,8 +110,10 @@ function createIntraUnitBondLines(ctx: VisualContext, unit: Unit, structure: Str
                 if (isBondType(f, BondType.Flag.Aromatic) || (arCount && !ignoreComputedAromatic)) {
                     if (arCount === 2) {
                         return LinkStyle.MirroredAromatic;
-                    } else {
+                    } else if (arCount === 1 || deloTriplets?.getThirdElement(aI, bI)) {
                         return LinkStyle.Aromatic;
+                    } else {
+                        // case for bonds between two aromatic rings
                     }
                 }
             }
@@ -126,10 +132,14 @@ function createIntraUnitBondLines(ctx: VisualContext, unit: Unit, structure: Str
         ignore: makeIntraBondIgnoreTest(structure, unit, props)
     };
 
-    const l = createLinkLines(ctx, builderProps, props, lines);
+    const { lines: l, boundingSphere } = createLinkLines(ctx, builderProps, props, lines);
 
-    const sphere = Sphere3D.expand(Sphere3D(), (childUnit ?? unit).boundary.sphere, 1 * sizeFactor);
-    l.setBoundingSphere(sphere);
+    if (boundingSphere) {
+        l.setBoundingSphere(boundingSphere);
+    } else if (l.lineCount > 0) {
+        const sphere = Sphere3D.expand(Sphere3D(), (childUnit ?? unit).boundary.sphere, 1 * sizeFactor);
+        l.setBoundingSphere(sphere);
+    }
 
     return l;
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018-2020 mol* contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2018-2022 mol* contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author David Sehnal <david.sehnal@gmail.com>
  * @author Alexander Rose <alexander.rose@weirdbyte.de>
@@ -15,6 +15,7 @@ import { Download } from '../transforms/data';
 import { DataFormatProvider } from '../formats/provider';
 import { Asset } from '../../mol-util/assets';
 import { StateTransforms } from '../transforms';
+import { assertUnreachable } from '../../mol-util/type-helpers';
 
 export type EmdbDownloadProvider = 'pdbe' | 'rcsb'
 
@@ -22,7 +23,7 @@ export { DownloadDensity };
 type DownloadDensity = typeof DownloadDensity
 const DownloadDensity = StateAction.build({
     from: PluginStateObject.Root,
-    display: { name: 'Download Density', description: 'Load a density from the provided source and create its default visual.' },
+    display: { name: 'Open Remote Density', description: 'Load a density from the provided source and create its default visual.' },
     params: (a, ctx: PluginContext) => {
         const { options } = ctx.dataFormats;
         return {
@@ -75,8 +76,8 @@ const DownloadDensity = StateAction.build({
         case 'pdb-xray':
             downloadParams = src.params.provider.server === 'pdbe' ? {
                 url: Asset.Url(src.params.type === '2fofc'
-                    ? `http://www.ebi.ac.uk/pdbe/coordinates/files/${src.params.provider.id.toLowerCase()}.ccp4`
-                    : `http://www.ebi.ac.uk/pdbe/coordinates/files/${src.params.provider.id.toLowerCase()}_diff.ccp4`),
+                    ? `https://www.ebi.ac.uk/pdbe/coordinates/files/${src.params.provider.id.toLowerCase()}.ccp4`
+                    : `https://www.ebi.ac.uk/pdbe/coordinates/files/${src.params.provider.id.toLowerCase()}_diff.ccp4`),
                 isBinary: true,
                 label: `PDBe X-ray map: ${src.params.provider.id}`
             } : {
@@ -109,7 +110,7 @@ const DownloadDensity = StateAction.build({
                 label: `RCSB PDB X-ray Density Server: ${src.params.provider.id}`
             };
             break;
-        default: throw new Error(`${(src as any).name} not supported.`);
+        default: assertUnreachable(src);
     }
 
     const data = await plugin.builders.data.download(downloadParams);
@@ -131,7 +132,7 @@ const DownloadDensity = StateAction.build({
             entryId = src.params.provider.id;
             provider = plugin.dataFormats.get('dscif');
             break;
-        default: throw new Error(`${(src as any).name} not supported.`);
+        default: assertUnreachable(src);
     }
 
     if (!provider) {

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018-2020 mol* contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2018-2022 mol* contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Alexander Rose <alexander.rose@weirdbyte.de>
  */
@@ -165,7 +165,7 @@ export namespace Lines {
 
     export const Params = {
         ...BaseGeometry.Params,
-        sizeFactor: PD.Numeric(3, { min: 0, max: 10, step: 0.1 }),
+        sizeFactor: PD.Numeric(2, { min: 0, max: 10, step: 0.1 }),
         lineSizeAttenuation: PD.Boolean(false),
     };
     export type Params = typeof Params
@@ -220,6 +220,8 @@ export namespace Lines {
         const boundingSphere = calculateTransformBoundingSphere(invariantBoundingSphere, transform.aTransform.ref.value, instanceCount);
 
         return {
+            dGeometryType: ValueCell.create('lines'),
+
             aMapping: lines.mappingBuffer,
             aGroup: lines.groupBuffer,
             aStart: lines.startBuffer,
@@ -240,7 +242,7 @@ export namespace Lines {
             ...BaseGeometry.createValues(props, counts),
             uSizeFactor: ValueCell.create(props.sizeFactor),
             dLineSizeAttenuation: ValueCell.create(props.lineSizeAttenuation),
-            dDoubleSided: ValueCell.create(true),
+            uDoubleSided: ValueCell.create(true),
             dFlipSided: ValueCell.create(false),
         };
     }

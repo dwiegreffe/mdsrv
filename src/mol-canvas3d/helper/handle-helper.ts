@@ -24,6 +24,7 @@ import { DataLoci, EmptyLoci, Loci } from '../../mol-model/loci';
 import { MarkerAction, MarkerActions } from '../../mol-util/marker-action';
 import { Visual } from '../../mol-repr/visual';
 import { Interval } from '../../mol-data/int';
+import { GraphicsRenderVariantsBlended } from '../../mol-gl/webgl/render-item';
 
 const HandleParams = {
     ...Mesh.Params,
@@ -72,7 +73,6 @@ export class HandleHelper {
                     this.scene.clear();
                     const params = { ...props.handle.params, scale: props.handle.params.scale * this.webgl.pixelRatio };
                     this.renderObject = createHandleRenderObject(params);
-                    this.renderObject.state.noClip = true;
                     this.scene.add(this.renderObject);
                     this.scene.commit();
 
@@ -127,7 +127,7 @@ export class HandleHelper {
     }
 
     constructor(private webgl: WebGLContext, props: Partial<HandleHelperProps> = {}) {
-        this.scene = Scene.create(webgl);
+        this.scene = Scene.create(webgl, GraphicsRenderVariantsBlended);
         this.setProps(props);
     }
 }
