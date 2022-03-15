@@ -18,4 +18,3 @@ MDsrv is a web tool for interactive and remote exploration of trajectories. Inte
         Start the container: docker run -p 1337:1337 -v /path/to/mdsrv/server:/mdsrv/server proteinvis/mdsrv-remote
 
 Access the webservice at 127.0.0.1:4242
-
