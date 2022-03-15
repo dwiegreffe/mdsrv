@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018-2021 mol* contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2018-2022 mol* contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author David Sehnal <david.sehnal@gmail.com>
  * @author Alexander Rose <alexander.rose@weirdbyte.de>
@@ -98,7 +98,7 @@ export class PluginContext {
             highlight: this.ev.behavior<{ labels: ReadonlyArray<LociLabel> }>({ labels: [] })
         },
         layout: {
-            leftPanelTabName: this.ev.behavior<LeftPanelTabName>('root')
+            leftPanelTabName: this.ev.behavior<LeftPanelTabName>('none')
         },
         canvas3d: {
             initialized: this.canvas3dInit.pipe(filter(v => !!v), take(1))
@@ -177,6 +177,7 @@ export class PluginContext {
 
     readonly customStructureControls = new Map<string, { new(): any /* constructible react components with <action.customControl /> */ }>();
     readonly customBottomPanels = new Map<string, { new(): any }>();
+    readonly customImportControls = new Map<string, { new(): any /* constructible react components with <action.customControl /> */ }>();
     readonly genericRepresentationControls = new Map<string, (selection: StructureHierarchyManager['selection']) => [StructureHierarchyRef[], string]>();
 
     /**

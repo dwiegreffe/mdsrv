@@ -5,8 +5,11 @@
  */
 
 import React from 'react';
+import { StateTransforms } from '../../mol-plugin-state/transforms';
+import { ModelFromTrajectory } from '../../mol-plugin-state/transforms/model';
 import { PluginUIComponent } from '../../mol-plugin-ui/base';
 import { PluginCommands } from '../../mol-plugin/commands';
+import { StateTransformer } from '../../mol-state';
 import { UUID } from '../../mol-util';
 import { arrayMax, arrayMin } from '../../mol-util/array';
 import { loose_label } from './helper';
@@ -14,11 +17,13 @@ import { PlotValue, SkipToFrame, textWidth } from './measurement';
 import { PlotParams } from './ui';
 
 interface PlotState {
-    hover: number
+    hover: number,
+    current: number
 }
 
 interface PlotProps {
     values?: PlotValue[],
+    dict?: number[],
     trajectoryRef?: string,
     measurementType?: string,
     measurementUnit?: string,
@@ -26,7 +31,7 @@ interface PlotProps {
 }
 
 export class LinePlot extends PluginUIComponent<PlotProps, PlotState> {
-    state = { hover: -1 };
+    state = { hover: -1, current: -1 };
 
     // plot height in pixel
     private plotHeight: number = 200;
@@ -42,6 +47,11 @@ export class LinePlot extends PluginUIComponent<PlotProps, PlotState> {
     private plotMin: number = -Infinity;
     // max value in props.values
     private plotMax: number = Infinity;
+
+    componentDidMount() {
+        this.subscribe(this.plugin.state.data.events.changed, this.updateCurrent);
+        this.subscribe(this.plugin.behaviors.state.isAnimating, this.updateCurrent);
+    }
 
     get values() {
         if (!this.props.values) return [];
@@ -183,6 +193,42 @@ export class LinePlot extends PluginUIComponent<PlotProps, PlotState> {
         return labels;
     }
 
+    private marker(values: number[], dict: number[]) {
+        if (this.state.current === -1) return null;
+
+        const x = this.x(dict[this.state.current] + 1);
+        const y = this.y(dict[this.state.current], values);
+        return <g>
+            <circle stroke='red' fill='transparent' cx={x} cy={y} r='6.5' ></circle>
+            <circle stroke='red' fill='red' cx={x} cy={y} r='4' ></circle>
+        </g>;
+    }
+
+    private updateCurrent = () => {
+        if (!this.props.trajectoryRef) {
+            this.setState({ current: -1 });
+            return;
+        }
+        const state = this.plugin.state.data;
+        const models = state.selectQ(q => q.ofTransformer(StateTransforms.Model.ModelFromTrajectory));
+        if (models.length === 0) {
+            this.setState({ current: -1 });
+            return;
+        }
+
+        for (const m of models) {
+            if (!m.sourceRef) continue;
+            const parent = state.cells.get(m.sourceRef)!;
+
+            if (parent.transform.ref === this.props.trajectoryRef) {
+                const index = (m.transform.params! as StateTransformer.Params<ModelFromTrajectory>).modelIndex;
+                this.setState({ current: index });
+                return;
+            }
+        }
+        this.setState({ current: -1 });
+    };
+
     private hover(values: number[]) {
         if (this.state.hover === -1) return;
         const hover = this.state.hover;
@@ -263,7 +309,7 @@ export class LinePlot extends PluginUIComponent<PlotProps, PlotState> {
 
     render() {
         const values = this.props.values;
-        if (!values || values.length === (0 || 1) || !this.props.trajectoryRef || !this.props.plotParams) return null;
+        if (!values || values.length === (0 || 1) || !this.props.trajectoryRef || !this.props.plotParams || !this.props.dict) return null;
         this.linePlot();
         const width = this.infoLabelText()[2];
         const plotWidth = values.length * this.xSpacing + width + 100;
@@ -280,6 +326,7 @@ export class LinePlot extends PluginUIComponent<PlotProps, PlotState> {
                     {this.grid}
                     {this.xTicks}
                     <g><path d={this.path} strokeWidth='2' stroke={this.props.plotParams.lineColor} fill='none' /></g>
+                    {this.marker(this.values, this.props.dict)}
                     {this.hover(this.values)}
                 </svg>
             </div>

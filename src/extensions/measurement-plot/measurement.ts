@@ -191,6 +191,14 @@ export function sortPlot(values: PlotValue[], sorting: string): PlotValue[] {
     }
 }
 
+export function dictPlot(values: PlotValue[]) {
+    const dict: number[] = new Array(values.length);
+    values.forEach((v, i) => {
+        dict[v.frame] = i;
+    });
+    return dict;
+}
+
 /**
  * @param values PlotValue[]
  * @param min filter min

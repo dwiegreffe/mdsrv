@@ -486,7 +486,10 @@
 .msp-selection-viewport-controls {
     position: relative;
     // display: inline-block;
-    margin: $control-spacing auto 0 auto;
+    margin-top: calc(32px + 2*(#{$control-spacing}));
+    margin-right: auto;
+    margin-bottom: 0px;
+    margin-left: auto;
     width: 430px;
 
     &-actions {

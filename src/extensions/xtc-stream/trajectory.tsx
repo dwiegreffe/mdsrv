@@ -210,7 +210,7 @@ export class XTCStreamControls extends PurePluginUIComponent<XTCStreamControlPro
             </div>
             <SelectControl param={param.trajectory} name='trajectory' value={value.trajectory} onChange={(e) => { this.onControlChanged(e); }} />
             <Button icon={canApply ? CheckSvg : void 0} className={`msp-btn-commit msp-btn-commit-${canApply ? 'on' : 'off'}`} onClick={this.apply} disabled={!canApply} style={{ marginTop: 1 }}>
-                Add Xtc Stream Trajectory
+                Add Stream Trajectory
             </Button>
         </>;
     }

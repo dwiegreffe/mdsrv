@@ -11,7 +11,7 @@ import { ShowChart } from '../../mol-plugin-ui/controls/icons';
 import { ParameterControls } from '../../mol-plugin-ui/controls/parameters';
 import { HelpGroup, HelpText } from '../../mol-plugin-ui/viewport/help';
 import { Color } from '../../mol-util/color';
-import { MeasurementParam, MeasurementLinePlotControls, PlotParams, RMSDParam } from './controls';
+import { MeasurementParam, MeasurementLinePlotControls, PlotParams, RMSDParam, PlotSortingParam } from './controls';
 import { unitLabel } from './measurement';
 import { LinePlot } from './plot';
 
@@ -34,7 +34,7 @@ interface State {
     busy?: boolean,
     values?: { frame: number, value: number }[],
     trajectoryRef?: string,
-
+    dict?: number[],
 }
 
 export class MeasurementLinePlotUI extends CollapsableControls<{}, State> {
@@ -96,6 +96,12 @@ export class MeasurementLinePlotUI extends CollapsableControls<{}, State> {
                 onChangeValues={xs => ctrl.setRmsd(xs)}
                 isDisabled={this.state.busy}
             />
+            <ParameterControls
+                params={PlotSortingParam}
+                values={ctrl.behaviors.sorting.value}
+                onChangeValues={xs => ctrl.behaviors.sorting.next(xs)}
+                isDisabled={this.state.busy}
+            />
             <ExpandGroup header='Plot Options'>
                 <ParameterControls
                     params={PlotParams}
@@ -106,6 +112,7 @@ export class MeasurementLinePlotUI extends CollapsableControls<{}, State> {
             </ExpandGroup>
             {measurement && <LinePlot
                 values={this.state.values}
+                dict={this.state.dict}
                 trajectoryRef={this.state.trajectoryRef}
                 measurementType={rmsd ? 'rmsd' : current?.type}
                 measurementUnit={rmsd ? '' : unitLabel(current?.type!)}
@@ -125,7 +132,7 @@ export class MeasurementLinePlotUI extends CollapsableControls<{}, State> {
         try {
             this.setState({ busy: true });
             const values = await this.controls.generateValues();
-            this.setState({ busy: false, values: values.values, trajectoryRef: values.tRef });
+            this.setState({ busy: false, values: values.values, trajectoryRef: values.tRef, dict: values.dict });
         } catch {
             this.setState({ busy: false });
         }
@@ -149,7 +156,7 @@ export class MeasurementLinePlotUI extends CollapsableControls<{}, State> {
     componentDidMount() {
         const merged = merge(
             this.controls.behaviors.current,
-            // this.controls.behaviors.sorting,
+            this.controls.behaviors.sorting,
             this.controls.behaviors.filter,
             this.controls.behaviors.rmsd,
             this.controls.behaviors.frame,

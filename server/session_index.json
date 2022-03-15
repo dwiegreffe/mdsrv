@@ -4,7 +4,7 @@
     "id": "9ddf37db-a249-4f6e-b542-9626b1cf6182",
     "name": "4gd3 - 2zt9",
     "description": "Alignment Matching",
-    "version": "3.3.1",
+    "version": "3.4.0",
     "isSticky": true
   },
   {
@@ -12,7 +12,7 @@
     "id": "80de2863-618b-4e4d-b811-316027fed991",
     "name": "md_1u19",
     "description": "Trajectory Streaming - Distance Plot",
-    "version": "3.3.1",
+    "version": "3.4.0",
     "isSticky": true
   },
   {
@@ -20,7 +20,7 @@
     "id": "b7871196-f9a2-40e0-86dc-ccc6c11c7304",
     "name": "eq7_1_apo",
     "description": "Trajectory Streaming - Angle Plot",
-    "version": "3.3.1",
+    "version": "3.4.0",
     "isSticky": true
   },
   {
@@ -28,7 +28,7 @@
     "id": "d462eb69-ca31-44c9-8d9b-42e159dc1f0e",
     "name": "md_1u19",
     "description": "Trajectory Local - Distance Plot",
-    "version": "3.3.1",
+    "version": "3.4.0",
     "isSticky": true
   },
   {
@@ -36,7 +36,7 @@
     "id": "f010cb1f-44ed-4938-8e56-610936224006",
     "name": "Trajectory Stream 4.5GB XTC",
     "description": "",
-    "version": "3.3.1",
+    "version": "3.4.0",
     "isSticky": true
   },
   {
@@ -44,7 +44,7 @@
     "id": "a491ac86-989a-416f-96e4-85fae55c4a2f",
     "name": "Cholesterol",
     "description": "Insertion and Distance Plot",
-    "version": "3.3.1",
+    "version": "3.4.0",
     "isSticky": true
   }
 ]

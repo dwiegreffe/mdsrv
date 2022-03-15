@@ -9,7 +9,7 @@ import { PluginCommands } from '../../mol-plugin/commands';
 import { PluginContext } from '../../mol-plugin/context';
 import { ParamDefinition as PD } from '../../mol-util/param-definition';
 
-export const DefaultSessionServerURL = 'https://remote.sca-ds.de/';
+export const DefaultSessionServerURL = 'https://remote.sca-ds.de';
 
 export const RemoteSessionParams = {
     name: PD.Text(),

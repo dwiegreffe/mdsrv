@@ -14,7 +14,7 @@ import { ParamDefinition as PD } from '../../mol-util/param-definition';
 import { AngleData } from '../../mol-repr/shape/loci/angle';
 import { DihedralData } from '../../mol-repr/shape/loci/dihedral';
 import { lociLabel } from '../../mol-theme/label';
-import { filterPlot, calculateAngles, calculateDihedrals, calculateDistances, calculateRmsd, PlotValue, sortPlot } from './measurement';
+import { filterPlot, calculateAngles, calculateDihedrals, calculateDistances, calculateRmsd, PlotValue, sortPlot, dictPlot } from './measurement';
 import { arrayMax, arrayMin } from '../../mol-util/array';
 import { Task } from '../../mol-task';
 import { merge } from 'rxjs';
@@ -506,6 +506,7 @@ export class MeasurementLinePlotControls extends PluginComponent {
 
                 const sorting = this.behaviors.sorting.value.sorting;
                 const sortedValues = sortPlot(values, sorting);
+                const dict = dictPlot(sortedValues);
 
                 let filteredValues = [];
                 if (this.behaviors.rmsd.value.rmsd) {
@@ -515,7 +516,7 @@ export class MeasurementLinePlotControls extends PluginComponent {
                     filteredValues = filterPlot(sortedValues, min, max);
                 }
 
-                return { values: filteredValues, tRef: plotInfo.trajectoryRef };
+                return { values: filteredValues, tRef: plotInfo.trajectoryRef, dict };
             } catch (e) {
                 this.plugin.log.error('' + e);
                 throw e;
