@@ -118,6 +118,13 @@ RUN    npm install -g forever
 
 EXPOSE 4242
 
-CMD cd mdsrv/build/viewer && http-server -p 4242
+
+#CMD cd mdsrv/docker/viewer && bash change-url.sh
+#CMD cd mdsrv/build/viewer && http-server -p 4242
+COPY change-url.sh /
+
+RUN	chmod +x change-url.sh
+
+ENTRYPOINT ["/change-url.sh"]
 
 
