@@ -14,7 +14,7 @@ import { ParamDefinition as PD } from '../../mol-util/param-definition';
 import { AngleData } from '../../mol-repr/shape/loci/angle';
 import { DihedralData } from '../../mol-repr/shape/loci/dihedral';
 import { lociLabel } from '../../mol-theme/label';
-import { filterPlot, calculateAngles, calculateDihedrals, calculateDistances, calculateRmsd, PlotValue, sortPlot, dictPlot } from './measurement';
+import { filterPlot, calculateAngles, calculateDistances, calculateRmsd, PlotValue, sortPlot, dictPlot, calculateDihedrals } from './measurement';
 import { arrayMax, arrayMin } from '../../mol-util/array';
 import { Task } from '../../mol-task';
 import { merge } from 'rxjs';
@@ -31,6 +31,11 @@ export interface PlotInfo {
     max: number,
     /** Id of object in state tree */
     id: string,
+}
+
+interface TrajectoryInfo {
+    trajectory: Trajectory | undefined,
+    trajectoryRef: string | undefined
 }
 
 export const MeasurementParam = {
@@ -88,6 +93,7 @@ export class MeasurementLinePlotControls extends PluginComponent {
         distances: this.ev.behavior<PlotInfo[]>([]),
         angles: this.ev.behavior<PlotInfo[]>([]),
         dihedrals: this.ev.behavior<PlotInfo[]>([]),
+        busy: this.ev.behavior<boolean>(false),
 
         /** Measurement type: distance, angle, dihedral */
         type: this.ev.behavior<PD.Values<typeof MeasurementParam>>(PD.getDefaultValues(MeasurementParam)),
@@ -274,27 +280,65 @@ export class MeasurementLinePlotControls extends PluginComponent {
      * @param data DistanceData
      * @param id State tree object id
      */
+    async calculateDistance(data: DistanceData, t: TrajectoryInfo, id: string, skip: number, progress: number) {
+        const [lA, lB] = data.pairs[0].loci.map(l => {
+            return l as StructureElement.Loci;
+        });
+
+        const oldDistance = this.getDistance(id);
+        let all: PlotValue[] = [];
+        if (!oldDistance) {
+            for (let i = 0; i < t.trajectory!.frameCount; i++) {
+                all.push({ frame: i, value: undefined });
+            }
+        } else {
+            all = oldDistance.values;
+        }
+
+        const task = calculateDistances([lA, lB], t.trajectory!, skip, all, progress);
+        const result = await this.plugin.runTask(task, { useOverlay: false });
+        all = result.values;
+
+        const singleValues: number[] = [];
+        all.forEach(v => { if (v.value !== undefined) { singleValues.push(v.value); } });
+
+        const distance: PlotInfo = {
+            trajectory: t.trajectory!,
+            trajectoryRef: t.trajectoryRef!,
+            locis: [lA, lB],
+            values: all,
+            min: arrayMin(singleValues),
+            max: arrayMax(singleValues),
+            id: id
+        };
+
+        this.removeDistance(id);
+        const d = this.behaviors.distances.value;
+        d.push(distance);
+        this.behaviors.distances.next(d);
+        return result.progress;
+    }
+
     async addDistance(data: DistanceData, id: string) {
+        this.behaviors.busy.next(true);
+
         const [lA, lB] = data.pairs[0].loci.map(l => {
             return l as StructureElement.Loci;
         });
         if (!this.sameTrajectory([lA, lB])) return;
 
-        const t = this.getTrajectory(lA);
-        const task = calculateDistances([lA, lB], t.trajectory!);
-        const values = await this.plugin.runTask(task, { useOverlay: false });
-        const distance: PlotInfo = {
-            trajectory: t.trajectory!,
-            trajectoryRef: t.trajectoryRef!,
-            locis: [lA, lB],
-            values: values,
-            min: arrayMin(values.map(v => v.value)),
-            max: arrayMax(values.map(v => v.value)),
-            id: id
-        };
-        const d = this.behaviors.distances.value;
-        d.push(distance);
-        this.behaviors.distances.next(d);
+        const calculate = Task.create('Calculate Distance Line Plot', async ctx => {
+            const t = this.getTrajectory(lA);
+            const skip = t.trajectory!.frameCount;
+            let progress = 0;
+
+            for (let i = skip; i > 0; i = Math.ceil(i / 2)) {
+                progress = await this.calculateDistance(data, t, id, i, progress);
+                if (i === 1) break;
+            }
+        });
+        this.plugin.runTask(calculate, { useOverlay: false })
+            .finally(() => this.behaviors.busy.next(false));
     }
 
     /**
@@ -302,27 +346,65 @@ export class MeasurementLinePlotControls extends PluginComponent {
      * @param data AngleData
      * @param id State tree object id
      */
+    async calculateAngle(data: AngleData, t: TrajectoryInfo, id: string, skip: number, progress: number) {
+        const [lA, lB, lC] = data.triples[0].loci.map(l => {
+            return l as StructureElement.Loci;
+        });
+
+        const oldAngle = this.getAngle(id);
+        let all: PlotValue[] = [];
+        if (!oldAngle) {
+            for (let i = 0; i < t.trajectory!.frameCount; i++) {
+                all.push({ frame: i, value: undefined });
+            }
+        } else {
+            all = oldAngle.values;
+        }
+
+        const task = calculateAngles([lA, lB, lC], t.trajectory!, skip, all, progress);
+        const result = await this.plugin.runTask(task, { useOverlay: false });
+        all = result.values;
+
+        const singleValues: number[] = [];
+        all.forEach(v => { if (v.value !== undefined) { singleValues.push(v.value); } });
+
+        const angle: PlotInfo = {
+            trajectory: t.trajectory!,
+            trajectoryRef: t.trajectoryRef!,
+            locis: [lA, lB, lC],
+            values: all,
+            min: arrayMin(singleValues),
+            max: arrayMax(singleValues),
+            id: id
+        };
+
+        this.removeAngle(id);
+        const a = this.behaviors.angles.value;
+        a.push(angle);
+        this.behaviors.angles.next(a);
+        return result.progress;
+    }
+
     async addAngle(data: AngleData, id: string) {
+        this.behaviors.busy.next(true);
+
         const [lA, lB, lC] = data.triples[0].loci.map(l => {
             return l as StructureElement.Loci;
         });
         if (!this.sameTrajectory([lA, lB, lC])) return;
 
-        const t = this.getTrajectory(lA);
-        const task = calculateAngles([lA, lB, lC], t.trajectory!);
-        const values = await this.plugin.runTask(task, { useOverlay: false });
-        const angle: PlotInfo = {
-            trajectory: t.trajectory!,
-            trajectoryRef: t.trajectoryRef!,
-            locis: [lA, lB, lC],
-            values: values,
-            min: arrayMin(values.map(v => v.value)),
-            max: arrayMax(values.map(v => v.value)),
-            id: id
-        };
-        const a = this.behaviors.angles.value;
-        a.push(angle);
-        this.behaviors.angles.next(a);
+        const calculate = Task.create('Calculate Angle Line Plot', async ctx => {
+            const t = this.getTrajectory(lA);
+            const skip = t.trajectory!.frameCount;
+            let progress = 0;
+
+            for (let i = skip; i > 0; i = Math.ceil(i / 2)) {
+                progress = await this.calculateAngle(data, t, id, i, progress);
+                if (i === 1) break;
+            }
+        });
+        this.plugin.runTask(calculate, { useOverlay: false })
+            .finally(() => this.behaviors.busy.next(false));
     }
 
     /**
@@ -330,27 +412,65 @@ export class MeasurementLinePlotControls extends PluginComponent {
      * @param data DihedralData
      * @param id State tree object id
      */
+    async calculateDihedral(data: DihedralData, t: TrajectoryInfo, id: string, skip: number, progress: number) {
+        const [lA, lB, lC, lD] = data.quads[0].loci.map(l => {
+            return l as StructureElement.Loci;
+        });
+
+        const oldDihedral = this.getDihedral(id);
+        let all: PlotValue[] = [];
+        if (!oldDihedral) {
+            for (let i = 0; i < t.trajectory!.frameCount; i++) {
+                all.push({ frame: i, value: undefined });
+            }
+        } else {
+            all = oldDihedral.values;
+        }
+
+        const task = calculateDihedrals([lA, lB, lC, lD], t.trajectory!, skip, all, progress);
+        const result = await this.plugin.runTask(task, { useOverlay: false });
+        all = result.values;
+
+        const singleValues: number[] = [];
+        all.forEach(v => { if (v.value !== undefined) { singleValues.push(v.value); } });
+
+        const dihedral: PlotInfo = {
+            trajectory: t.trajectory!,
+            trajectoryRef: t.trajectoryRef!,
+            locis: [lA, lB, lC, lD],
+            values: all,
+            min: arrayMin(singleValues),
+            max: arrayMax(singleValues),
+            id: id
+        };
+
+        this.removeDihedral(id);
+        const d = this.behaviors.dihedrals.value;
+        d.push(dihedral);
+        this.behaviors.dihedrals.next(d);
+        return result.progress;
+    }
+
     async addDihedral(data: DihedralData, id: string) {
+        this.behaviors.busy.next(true);
+
         const [lA, lB, lC, lD] = data.quads[0].loci.map(l => {
             return l as StructureElement.Loci;
         });
         if (!this.sameTrajectory([lA, lB, lC, lD])) return;
 
-        const t = this.getTrajectory(lA);
-        const task = calculateDihedrals([lA, lB, lC, lD], t.trajectory!);
-        const values = await this.plugin.runTask(task, { useOverlay: false });
-        const dihedral: PlotInfo = {
-            trajectory: t.trajectory!,
-            trajectoryRef: t.trajectoryRef!,
-            locis: [lA, lB, lC, lD],
-            values: values,
-            min: arrayMin(values.map(v => v.value)),
-            max: arrayMax(values.map(v => v.value)),
-            id: id
-        };
-        const d = this.behaviors.dihedrals.value;
-        d.push(dihedral);
-        this.behaviors.dihedrals.next(d);
+        const calculate = Task.create('Calculate Distance Line Plot', async ctx => {
+            const t = this.getTrajectory(lA);
+            const skip = t.trajectory!.frameCount;
+            let progress = 0;
+
+            for (let i = skip; i > 0; i = Math.ceil(i / 2)) {
+                progress = await this.calculateDihedral(data, t, id, i, progress);
+                if (i === 1) break;
+            }
+        });
+        this.plugin.runTask(calculate, { useOverlay: false })
+            .finally(() => this.behaviors.busy.next(false));
     }
 
     /**
@@ -378,7 +498,7 @@ export class MeasurementLinePlotControls extends PluginComponent {
      * @param l Loci
      * @returns Trajectory and trajectory ref
      */
-    getTrajectory(l: StructureElement.Loci) {
+    getTrajectory(l: StructureElement.Loci): TrajectoryInfo {
         const model = l.structure.model;
         let trajectory;
         let trajectoryRef;
@@ -411,6 +531,15 @@ export class MeasurementLinePlotControls extends PluginComponent {
         this.behaviors.distances.next(distances);
     }
 
+    getDistance(id: string) {
+        const distances = this.behaviors.distances.value;
+        for (let i = 0; i < distances.length; i++) {
+            if (distances[i].id === id) {
+                return distances[i];
+            }
+        }
+    }
+
     /**
      * Removed angle from angle list.
      * @param id State tree object id
@@ -425,6 +554,15 @@ export class MeasurementLinePlotControls extends PluginComponent {
         this.behaviors.angles.next(angles);
     }
 
+    getAngle(id: string) {
+        const angles = this.behaviors.angles.value;
+        for (let i = 0; i < angles.length; i++) {
+            if (angles[i].id === id) {
+                return angles[i];
+            }
+        }
+    }
+
     /**
      * Removed dihedral from dihedral list.
      * @param id State tree object id
@@ -437,6 +575,15 @@ export class MeasurementLinePlotControls extends PluginComponent {
             }
         }
         this.behaviors.dihedrals.next(dihedrals);
+    }
+
+    getDihedral(id: string) {
+        const dihedrals = this.behaviors.dihedrals.value;
+        for (let i = 0; i < dihedrals.length; i++) {
+            if (dihedrals[i].id === id) {
+                return dihedrals[i];
+            }
+        }
     }
 
     /**

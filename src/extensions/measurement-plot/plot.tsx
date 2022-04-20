@@ -55,31 +55,41 @@ export class LinePlot extends PluginUIComponent<PlotProps, PlotState> {
 
     get values() {
         if (!this.props.values) return [];
-        return this.props.values.map(v => { return v.value; });
+        const values: number[] = [];
+        this.props.values.forEach(v => {
+            if (v.value !== undefined) {
+                values.push(v.value);
+            }
+        });
+        return values;
     }
 
-    private createPath(plot: number[]) {
-        if (plot.length === 0) return '';
+    private createPath() {
+        const values = this.props.values;
+        if (!values || values.length === 0) return '';
 
         let path: string = '';
         const min = this.plotMin;
         const max = this.plotMax;
         const scale: number = this.plotHeight / (max - min);
 
-        if (plot.length === 1) {
+        if (values.length === 1) {
             const x1 = (this.xSpacing * 1);
             const x2 = 0;
-            const y = Math.floor((plot[0] - max) * -1 * scale) + this.topPadding;
+            const y = Math.floor((values[0].value! - max) * -1 * scale) + this.topPadding;
             return 'M ' + x1 + ',' + y + 'L ' + x2 + ',' + y;
+        } else if (values.length === 1) {
+            return '';
         }
 
         const x = (this.xSpacing * 1);
-        const y = Math.floor((plot[0] - max) * -1 * scale) + this.topPadding;
+        const y = Math.floor((values[0].value! - max) * -1 * scale) + this.topPadding;
         path += 'M ' + x + ',' + y;
 
-        for (let i = 1; i < plot.length; i++) {
+        for (let i = 1; i < values.length; i++) {
+            if (values[i].value === undefined) continue;
             const x = (this.xSpacing * (i + 1));
-            const y = Math.floor((plot[i] - max) * -1 * scale) + this.topPadding;
+            const y = Math.floor((values[i].value! - max) * -1 * scale) + this.topPadding;
             const next = ' L ' + x + ',' + y;
             path += next;
         }
@@ -93,7 +103,7 @@ export class LinePlot extends PluginUIComponent<PlotProps, PlotState> {
         this.yTicks = this.yAxisTicks(values);
         this.xTicks = this.xAxisTicks();
         this.grid = this.plotGrid();
-        this.path = this.createPath(values);
+        this.path = this.createPath();
     }
 
     private plotGrid() {
@@ -193,11 +203,14 @@ export class LinePlot extends PluginUIComponent<PlotProps, PlotState> {
         return labels;
     }
 
-    private marker(values: number[], dict: number[]) {
+    private marker(values: PlotValue[], dict: number[]) {
         if (this.state.current === -1) return null;
 
+        const v = values[dict[this.state.current]].value;
+        if (v === undefined) return;
+
         const x = this.x(dict[this.state.current] + 1);
-        const y = this.y(dict[this.state.current], values);
+        const y = this.y(v);
         return <g>
             <circle stroke='red' fill='transparent' cx={x} cy={y} r='6.5' ></circle>
             <circle stroke='red' fill='red' cx={x} cy={y} r='4' ></circle>
@@ -229,11 +242,15 @@ export class LinePlot extends PluginUIComponent<PlotProps, PlotState> {
         this.setState({ current: -1 });
     };
 
-    private hover(values: number[]) {
+    private hover(values: PlotValue[]) {
         if (this.state.hover === -1) return;
         const hover = this.state.hover;
+
+        const v = values[hover].value;
+        if (v === undefined) return;
+
         const x = this.x(hover + 1);
-        const y = this.y(hover, values);
+        const y = this.y(v);
         return <g>
             <circle stroke={this.props.plotParams?.hoverColor} fill='transparent' cx={x} cy={y} r='6.5' ></circle>
             <circle stroke={this.props.plotParams?.hoverColor} fill={this.props.plotParams?.hoverColor} cx={x} cy={y} r='4' ></circle>
@@ -254,10 +271,10 @@ export class LinePlot extends PluginUIComponent<PlotProps, PlotState> {
     }
 
     private infoLabelText(): [string, string, number] {
-        if (this.state.hover === -1) return ['', '', 0];
+        if (this.state.hover === -1 || !this.props.values![this.state.hover].value) return ['', '', 0];
         const measurement = this.props.measurementType!.charAt(0).toUpperCase() + this.props.measurementType!.slice(1);
         const frameText = `Frame: ${this.props.values![this.state.hover].frame + 1}`;
-        const valueText = `${measurement}: ${this.props.values![this.state.hover].value.toFixed(2)} ${this.props.measurementUnit}`;
+        const valueText = `${measurement}: ${this.props.values![this.state.hover].value!.toFixed(2)} ${this.props.measurementUnit}`;
         let width = Math.max(textWidth(frameText)!, textWidth(valueText)!);
         width = width ? width + 15 : 150;
         return [frameText, valueText, width];
@@ -267,11 +284,11 @@ export class LinePlot extends PluginUIComponent<PlotProps, PlotState> {
         return this.xSpacing * i;
     };
 
-    private y(i: number, values: number[]) {
+    private y(value: number) {
         const min = this.plotMin;
         const max = this.plotMax;
         const scale: number = this.plotHeight / (max - min);
-        return (Math.floor((values[i] - max) * -1 * scale) + this.topPadding);
+        return (Math.floor((value - max) * -1 * scale) + this.topPadding);
     }
 
     mouseMove = (e: React.MouseEvent) => {
@@ -309,7 +326,7 @@ export class LinePlot extends PluginUIComponent<PlotProps, PlotState> {
 
     render() {
         const values = this.props.values;
-        if (!values || values.length === (0 || 1) || !this.props.trajectoryRef || !this.props.plotParams || !this.props.dict) return null;
+        if (!values || values.length === 0 || !this.props.trajectoryRef || !this.props.plotParams || !this.props.dict) return null;
         this.linePlot();
         const width = this.infoLabelText()[2];
         const plotWidth = values.length * this.xSpacing + width + 100;
@@ -326,8 +343,8 @@ export class LinePlot extends PluginUIComponent<PlotProps, PlotState> {
                     {this.grid}
                     {this.xTicks}
                     <g><path d={this.path} strokeWidth='2' stroke={this.props.plotParams.lineColor} fill='none' /></g>
-                    {this.marker(this.values, this.props.dict)}
-                    {this.hover(this.values)}
+                    {this.marker(values, this.props.dict)}
+                    {this.hover(values)}
                 </svg>
             </div>
         </div>;

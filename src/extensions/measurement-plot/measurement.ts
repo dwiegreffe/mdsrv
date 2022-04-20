@@ -22,7 +22,7 @@ import { ParamDefinition as PD } from '../../mol-util/param-definition';
 /** Line plot value: value for a specific frame. */
 export type PlotValue = {
     frame: number,
-    value: number
+    value: number | undefined
 }
 
 /**
@@ -31,21 +31,23 @@ export type PlotValue = {
  * @param trajectory Trajectory
  * @returns  Task
  */
-export function calculateDistances(locis: StructureElement.Loci[], trajectory: Trajectory) {
-    return Task.create('Calculate Distance Line Plot', async ctx => {
+export function calculateDistances(locis: StructureElement.Loci[], trajectory: Trajectory, skip: number, values: PlotValue[], progress: number) {
+    return Task.create('Calculate Distance Line Plot Part', async ctx => {
         await ctx.update({ message: 'Initializing...', isIndeterminate: true });
-        const distances: PlotValue[] = [];
-        await ctx.update({ message: 'Calculating Distance Line Plot...', isIndeterminate: false, current: 0, max: trajectory.frameCount - 1 });
+        const distances: PlotValue[] = values;
+        await ctx.update({ message: 'Calculating Distance Line Plot...', isIndeterminate: false, current: progress, max: trajectory.frameCount - 1 });
         for (let i = 0; i < trajectory.frameCount; i++) {
-            const model = await Task.resolveInContext(trajectory.getFrameAtIndex(i));
-            const structure = Structure.ofModel(model);
+            if (distances[i].value === undefined && (i % skip === 0)) {
+                const model = await Task.resolveInContext(trajectory.getFrameAtIndex(i));
+                const structure = Structure.ofModel(model);
 
-            const [lA, lB] = locis.map(l => Loci.getCenter(StructureElement.Loci.remap(l, structure))!);
-            const distance = Vec3.distance(lA, lB);
-            distances.push({ frame: i, value: distance });
-            await ctx.update({ current: i + 1 });
+                const [lA, lB] = locis.map(l => Loci.getCenter(StructureElement.Loci.remap(l, structure))!);
+                const distance = Vec3.distance(lA, lB);
+                distances[i] = { frame: i, value: distance };
+                await ctx.update({ current: progress++ });
+            }
         }
-        return distances;
+        return { values: distances, progress };
     });
 }
 
@@ -55,23 +57,25 @@ export function calculateDistances(locis: StructureElement.Loci[], trajectory: T
  * @param trajectory Trajectory
  * @returns  Task
  */
-export function calculateAngles(locis: StructureElement.Loci[], trajectory: Trajectory) {
-    return Task.create('Calculation Angle Line Plot', async ctx => {
+export function calculateAngles(locis: StructureElement.Loci[], trajectory: Trajectory, skip: number, values: PlotValue[], progress: number) {
+    return Task.create('Calculation Angle Line Plot Part', async ctx => {
         await ctx.update({ message: 'Initializing...', isIndeterminate: true });
-        const angles: PlotValue[] = [];
+        const angles: PlotValue[] = values;
         await ctx.update({ message: 'Calculating Angle Line Plot...', isIndeterminate: false, current: 0, max: trajectory.frameCount - 1 });
         for (let i = 0; i < trajectory.frameCount; i++) {
-            const model = await Task.resolveInContext(trajectory.getFrameAtIndex(i));
-            const structure = Structure.ofModel(model);
+            if (angles[i].value === undefined && (i % skip === 0)) {
+                const model = await Task.resolveInContext(trajectory.getFrameAtIndex(i));
+                const structure = Structure.ofModel(model);
 
-            const [lA, lB, lC] = locis.map(l => Loci.getCenter(StructureElement.Loci.remap(l, structure))!);
-            const vAB = Vec3.sub(Vec3(), lA, lB);
-            const vCB = Vec3.sub(Vec3(), lC, lB);
-            const angle = radToDeg(Vec3.angle(vAB, vCB));
-            angles.push({ frame: i, value: angle });
-            await ctx.update({ current: i + 1 });
+                const [lA, lB, lC] = locis.map(l => Loci.getCenter(StructureElement.Loci.remap(l, structure))!);
+                const vAB = Vec3.sub(Vec3(), lA, lB);
+                const vCB = Vec3.sub(Vec3(), lC, lB);
+                const angle = radToDeg(Vec3.angle(vAB, vCB));
+                angles[i] = { frame: i, value: angle };
+                await ctx.update({ current: progress++ });
+            }
         }
-        return angles;
+        return { values: angles, progress };
     });
 }
 
@@ -81,21 +85,23 @@ export function calculateAngles(locis: StructureElement.Loci[], trajectory: Traj
  * @param trajectory Trajectory
  * @returns  Task
  */
-export function calculateDihedrals(locis: StructureElement.Loci[], trajectory: Trajectory) {
-    return Task.create('Calculation Dihedral Line Plot', async ctx => {
+export function calculateDihedrals(locis: StructureElement.Loci[], trajectory: Trajectory, skip: number, values: PlotValue[], progress: number) {
+    return Task.create('Calculation Dihedral Line Plot Part', async ctx => {
         await ctx.update({ message: 'Initializing...', isIndeterminate: true });
-        const dihedrals: PlotValue[] = [];
+        const dihedrals: PlotValue[] = values;
         await ctx.update({ message: 'Calculating Dihedral Line Plot...', isIndeterminate: false, current: 0, max: trajectory.frameCount - 1 });
         for (let i = 0; i < trajectory.frameCount; i++) {
-            const model = await Task.resolveInContext(trajectory.getFrameAtIndex(i));
-            const structure = Structure.ofModel(model);
+            if (dihedrals[i].value === undefined && (i % skip === 0)) {
+                const model = await Task.resolveInContext(trajectory.getFrameAtIndex(i));
+                const structure = Structure.ofModel(model);
 
-            const [lA, lB, lC, lD] = locis.map(l => Loci.getCenter(StructureElement.Loci.remap(l, structure))!);
-            const dihedral = radToDeg(Vec3.dihedralAngle(lA, lB, lC, lD));
-            dihedrals.push({ frame: i, value: dihedral });
-            await ctx.update({ current: i + 1 });
+                const [lA, lB, lC, lD] = locis.map(l => Loci.getCenter(StructureElement.Loci.remap(l, structure))!);
+                const dihedral = radToDeg(Vec3.dihedralAngle(lA, lB, lC, lD));
+                dihedrals[i] = { frame: i, value: dihedral };
+                await ctx.update({ current: progress++ });
+            }
         }
-        return dihedrals;
+        return { values: dihedrals, progress };
     });
 }
 
@@ -185,8 +191,8 @@ export const SkipToFrame = StateAction.build({
 export function sortPlot(values: PlotValue[], sorting: string): PlotValue[] {
     switch (sorting) {
         case 'frames': return values.sort((a, b) => (a.frame > b.frame) ? 1 : -1);
-        case 'asc': return values.sort((a, b) => (a.value > b.value) ? 1 : -1);
-        case 'desc': return values.sort((a, b) => (a.value < b.value) ? 1 : -1);
+        // case 'asc': return values.sort((a, b) => (a.value > b.value) ? 1 : -1);
+        // case 'desc': return values.sort((a, b) => (a.value < b.value) ? 1 : -1);
         default: return values;
     }
 }
@@ -208,7 +214,9 @@ export function dictPlot(values: PlotValue[]) {
 export function filterPlot(values: PlotValue[], min: number, max: number): PlotValue[] {
     const filtered: PlotValue[] = [];
     for (let i = 0; i < values.length; i++) {
-        if (min <= values[i].value && values[i].value <= max) {
+        if (values[i].value === undefined) {
+            filtered.push(values[i]);
+        } else if (min <= values[i].value! && values[i].value! <= max) {
             filtered.push(values[i]);
         }
     }

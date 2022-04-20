@@ -12,7 +12,7 @@ import { ParameterControls } from '../../mol-plugin-ui/controls/parameters';
 import { HelpGroup, HelpText } from '../../mol-plugin-ui/viewport/help';
 import { Color } from '../../mol-util/color';
 import { MeasurementParam, MeasurementLinePlotControls, PlotParams, RMSDParam, PlotSortingParam } from './controls';
-import { unitLabel } from './measurement';
+import { PlotValue, unitLabel } from './measurement';
 import { LinePlot } from './plot';
 
 require('./plot.scss');
@@ -32,7 +32,8 @@ export interface PlotParams {
 
 interface State {
     busy?: boolean,
-    values?: { frame: number, value: number }[],
+    adding?: boolean,
+    values?: PlotValue[],
     trajectoryRef?: string,
     dict?: number[],
 }
@@ -82,32 +83,32 @@ export class MeasurementLinePlotUI extends CollapsableControls<{}, State> {
                 params={filter.param}
                 values={filter.value}
                 onChangeValues={xs => ctrl.setFilter(xs)}
-                isDisabled={this.state.busy}
+                isDisabled={this.state.busy || this.state.adding}
             />}
             {measurement && rmsd && frame && <ParameterControls
                 params={frame.param}
                 values={frame.value}
                 onChangeValues={xs => ctrl.setFrame(xs)}
-                isDisabled={this.state.busy}
+                isDisabled={this.state.busy || this.state.adding}
             />}
             <ParameterControls
                 params={RMSDParam}
                 values={ctrl.behaviors.rmsd.value}
                 onChangeValues={xs => ctrl.setRmsd(xs)}
-                isDisabled={this.state.busy}
+                isDisabled={this.state.busy || this.state.adding}
             />
             <ParameterControls
                 params={PlotSortingParam}
                 values={ctrl.behaviors.sorting.value}
                 onChangeValues={xs => ctrl.behaviors.sorting.next(xs)}
-                isDisabled={this.state.busy}
+                isDisabled={this.state.busy || this.state.adding}
             />
             <ExpandGroup header='Plot Options'>
                 <ParameterControls
                     params={PlotParams}
                     values={ctrl.behaviors.plot.value}
                     onChangeValues={xs => ctrl.behaviors.plot.next(xs)}
-                    isDisabled={this.state.busy}
+                    isDisabled={this.state.busy || this.state.adding}
                 />
             </ExpandGroup>
             {measurement && <LinePlot
@@ -160,11 +161,15 @@ export class MeasurementLinePlotUI extends CollapsableControls<{}, State> {
             this.controls.behaviors.filter,
             this.controls.behaviors.rmsd,
             this.controls.behaviors.frame,
-            this.controls.behaviors.plot
+            this.controls.behaviors.plot,
         );
 
         this.subscribe(merged, async => {
             this.generateValues();
+        });
+
+        this.subscribe(this.controls.behaviors.busy, async v => {
+            this.setState({ adding: v });
         });
     }
 
