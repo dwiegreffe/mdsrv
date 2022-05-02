@@ -3,12 +3,14 @@
     "timestamp": 1639483082433,
     "id": "md_1u19",
     "name": "md_1u19",
-    "description": ""
+    "description": "",
+    "source": ""
   },
   {
     "timestamp": 1639483111613,
     "id": "reduced_protein_sod_1ns_pub",
     "name": "eq7_1_apo reduced_protein_sod_1ns_pub",
-    "description": ""
+    "description": "",
+    "source": ""
   }
 ]

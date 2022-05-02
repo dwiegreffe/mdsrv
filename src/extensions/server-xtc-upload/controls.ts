@@ -14,7 +14,8 @@ export const UploadParams = {
     server: PD.Text(DefaultTrajectoryServerUrl),
     url: PD.Text(),
     name: PD.Text(),
-    description: PD.Text()
+    description: PD.Text(),
+    source: PD.Text(),
 };
 
 export class XTCUploadControls extends PluginComponent {
@@ -27,12 +28,13 @@ export class XTCUploadControls extends PluginComponent {
 
         if (params.url.match(/(\w*)\.xtc$/) === null) {
             this.plugin.log.error('URL ist not an .xtc');
-            return;
+            return 'URL ist not an .xtc';
         }
 
-        const url = urlCombine(params.server, `/upload/trajectory/${encodeURIComponent(params.url)}/${encodeURIComponent(params.name)}/${encodeURIComponent(params.description)}`);
+        const url = urlCombine(params.server, `/upload/trajectory/${encodeURIComponent(params.url)}/${encodeURIComponent(params.name)}/${encodeURIComponent(params.description)}/${encodeURIComponent(params.source)}`);
         const message = await this.plugin.runTask(this.plugin.fetch({ url, type: 'string' }));
         this.plugin.log.message(message);
+        return message;
     };
 
     constructor(private plugin: PluginContext) {

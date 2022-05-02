@@ -38,7 +38,7 @@ export const PluginCommands = {
             Upload: PluginCommand<{ name?: string, description?: string, playOnLoad?: boolean, serverUrl: string, params?: PluginState.SnapshotParams }>(),
             Fetch: PluginCommand<{ url: string }>(),
 
-            UploadSession: PluginCommand<{ name?: string, description?: string, serverUrl: string, type: PluginState.SnapshotType, params?: PluginState.SnapshotParams }>(),
+            UploadSession: PluginCommand<{ name?: string, description?: string, source?: string, serverUrl: string, type: PluginState.SnapshotType, params?: PluginState.SnapshotParams }>(),
             FetchSession: PluginCommand<{ url: string }>(),
 
             DownloadToFile: PluginCommand<{ name?: string, type: PluginState.SnapshotType, params?: PluginState.SnapshotParams }>(),

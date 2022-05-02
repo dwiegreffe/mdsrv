@@ -11,20 +11,34 @@ import { OrderedMap } from 'immutable';
 import { RemoteEntry, RemoteStateSnapshotList } from '../../mol-plugin-ui/state/snapshots';
 import { urlCombine } from '../../mol-util/url';
 import { ParameterControls } from '../../mol-plugin-ui/controls/parameters';
-import { Button, IconButton } from '../../mol-plugin-ui/controls/common';
+import { Button } from '../../mol-plugin-ui/controls/common';
 import { RefreshSvg, CloudUploadSvg, SaveOutlinedSvg } from '../../mol-plugin-ui/controls/icons';
 import { CollapsableControls, CollapsableState } from '../../mol-plugin-ui/base';
-import { RemoteSessionControls, RemoteSessionParams } from './controls';
-import { merge } from 'rxjs';
+import { RemoteSessionControls, RemoteSessionParams, ServerParam } from './controls';
 import { HelpGroup, HelpText } from '../../mol-plugin-ui/viewport/help';
+import { sleep } from '../../mol-util/sleep';
+
+type SessionDetails = {
+    name: string,
+    description: string,
+    source: string | undefined
+}
 
 interface State {
     busy?: boolean,
     entries?: OrderedMap<string, RemoteEntry>,
+    sessionDetails?: SessionDetails,
+    successful?: boolean | undefined,
 }
 
 export class RemoteSessionSnapshots extends CollapsableControls<{ listOnly?: boolean, expanded?: boolean }, State> {
     private _controls: RemoteSessionControls | undefined;
+
+    private uploadMessage: React.CSSProperties = {
+        textAlign: 'center',
+        color: '#68BEFD',
+        fontWeight: 'bold',
+    };
 
     get controls() {
         return this._controls || (this._controls = new RemoteSessionControls(this.plugin));
@@ -37,8 +51,20 @@ export class RemoteSessionSnapshots extends CollapsableControls<{ listOnly?: boo
             isCollapsed: !expanded,
             brand: { accent: 'cyan', svg: SaveOutlinedSvg },
             isHidden: false,
-            hoverInfo: 'Load/save a whole session (including locally imported files) from/to a remote session server'
+            hoverInfo: 'Load/save a whole session (including locally imported files) from/to a remote session server',
+            sessionDetails: undefined,
         };
+    }
+
+    private renderSessionInfo(session: SessionDetails) {
+        return <div style={{ marginBottom: 10, marginTop: 5 }}>
+            <div className='msp-help-text'>
+                <div><b><i>Current Session:</i></b></div>
+                <div>Name: <i>{`${session.name}`}</i></div>
+                {session.description.length !== 0 ? <div>Description: <i>{`${session.description}`}</i></div> : null}
+                {session.source ? <div>Source: <i>{`${session.source}`}</i></div> : null}
+            </div>
+        </div>;
     }
 
     protected renderControls(): JSX.Element {
@@ -46,42 +72,58 @@ export class RemoteSessionSnapshots extends CollapsableControls<{ listOnly?: boo
         return <>
             {!this.props.listOnly && <>
                 <ParameterControls
+                    params={ServerParam}
+                    values={ctrl.behaviors.serverUrl.value}
+                    onChangeValues={xs => ctrl.behaviors.serverUrl.next(xs)}
+                    isDisabled={this.state.busy}
+                />
+                <ParameterControls
                     params={RemoteSessionParams}
                     values={ctrl.behaviors.params.value}
                     onChangeValues={xs => ctrl.behaviors.params.next(xs)}
                     isDisabled={this.state.busy}
                 />
+                <div className='msp-flex-row'>
+                    {this.state.successful !== undefined && <p className='msp-label-empty' style={this.uploadMessage}>{this.state.successful ? 'Upload successful' : 'Upload error'}</p>}
+                    <Button icon={CloudUploadSvg} onClick={this.upload} disabled={this.state.busy} commit>Upload</Button>
+                </div>
                 <HelpGroup header='Session Info'>
                     <HelpText>Saving a whole session to a remote session server will not only save he state of the client,
                     but will also serialize the data imported into the session.
                     This ensures that the data used can be reloaded unchanged into the client at a later time.
+                    To further define your session, you can provide a name, a detailed despription, and the origin of the data in the session.
                     </HelpText>
                 </HelpGroup>
-                <div className='msp-flex-row'>
-                    <IconButton onClick={this.refresh} disabled={this.state.busy} svg={RefreshSvg} />
-                    <Button icon={CloudUploadSvg} onClick={this.upload} disabled={this.state.busy} commit>Upload</Button>
-                </div>
             </>}
-            {this.state.entries && <>
+            {this.props.listOnly && this.state.entries && this.state.sessionDetails ? this.renderSessionInfo(this.state.sessionDetails) : null}
+            {this.props.listOnly && this.state.entries && <div>
+                <ParameterControls
+                    params={ServerParam}
+                    values={ctrl.behaviors.serverUrl.value}
+                    onChangeValues={xs => ctrl.behaviors.serverUrl.next(xs)}
+                    isDisabled={this.state.busy}
+                />
+                <div className='msp-flex-row'>
+                    <Button onClick={this.refresh} disabled={this.state.busy} icon={RefreshSvg}>Refresh</Button>
+                </div>
                 <RemoteStateSnapshotList
                     entries={this.state.entries}
                     isBusy={this.state.busy || false}
-                    serverUrl={this.controls.behaviors.params.value.options.serverURL}
+                    serverUrl={this.controls.behaviors.serverUrl.value.serverURL}
                     open={'session-url'}
                     fetch={this.fetch}
                     remove={this.remove}
                 />
-            </>}
+            </div>}
         </>;
     }
 
     componentDidMount() {
-        const merged = merge(
-            this.controls.behaviors.params,
-        );
+        this.subscribe(this.controls.behaviors.params, () => {
+            this.forceUpdate();
+        });
 
-        this.subscribe(merged, () => {
-            this.refresh();
+        this.subscribe(this.controls.behaviors.serverUrl, () => {
             this.forceUpdate();
         });
 
@@ -94,8 +136,8 @@ export class RemoteSessionSnapshots extends CollapsableControls<{ listOnly?: boo
     }
 
     serverUrl(q?: string) {
-        if (!q) return this.controls.behaviors.params.value.options.serverURL;
-        return urlCombine(this.controls.behaviors.params.value.options.serverURL, q);
+        if (!q) return this.controls.behaviors.serverUrl.value.serverURL;
+        return urlCombine(this.controls.behaviors.serverUrl.value.serverURL, q);
     }
 
     refresh = async () => {
@@ -118,7 +160,7 @@ export class RemoteSessionSnapshots extends CollapsableControls<{ listOnly?: boo
 
             this.setState({ entries: entries.asImmutable(), busy: false });
         } catch (e) {
-            this.plugin.log.error('Fetching Remote Snapshots: ' + e);
+            this.plugin.log.error('Error Fetching Remote Snapshots: ' + e);
             this.setState({ entries: OrderedMap(), busy: false });
         }
     };
@@ -128,8 +170,15 @@ export class RemoteSessionSnapshots extends CollapsableControls<{ listOnly?: boo
             this.setState({ busy: true });
             await this.controls.upload();
             this.plugin.log.message('Snapshot uploaded.');
-            this.setState({ busy: false });
+            this.setState({ busy: false, successful: true });
             this.refresh();
+            await sleep(5000);
+            this.setState({ successful: undefined });
+        } catch (e) {
+            this.plugin.log.error('Something went wrong. The session was not uploaded to the server. Please check the Server URL.');
+            this.setState({ successful: false });
+            await sleep(5000);
+            this.setState({ successful: undefined });
         } finally {
             this.setState({ busy: false });
         }
@@ -141,9 +190,18 @@ export class RemoteSessionSnapshots extends CollapsableControls<{ listOnly?: boo
         const entry = this.state.entries!.get(id);
         if (!entry) return;
 
+        const info: SessionDetails = {
+            name: entry.name,
+            description: entry.description,
+            source: entry.source
+        };
+
         try {
             this.setState({ busy: true });
             await this.controls.fetch(entry.url);
+            this.setState({ sessionDetails: info });
+        } catch {
+            this.setState({ sessionDetails: undefined });
         } finally {
             this.setState({ busy: false });
         }

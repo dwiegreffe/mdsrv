@@ -40,12 +40,19 @@ export class XTCStreamTrajectory extends CollapsableControls {
     }
 }
 
+type TrajectoryDetails = {
+    name: string,
+    description: string,
+    source: string | undefined
+}
+
 type XTCStreamControlsState = {
     isBusy: boolean,
     modelRef: string,
     url: string,
     trajectoryId: string,
     entries: OrderedMap<string, RemoteEntry>,
+    trajectoryDetails?: TrajectoryDetails,
 }
 
 type XTCStreamControlProps = {
@@ -59,6 +66,7 @@ export class XTCStreamControls extends PurePluginUIComponent<XTCStreamControlPro
         url: DefaultTrajectoryServerUrl,
         trajectoryId: '',
         entries: OrderedMap(),
+        trajectoryDetails: undefined
     };
 
     componentDidMount() {
@@ -70,9 +78,20 @@ export class XTCStreamControls extends PurePluginUIComponent<XTCStreamControlPro
     sync() {
         const modelOptions = this.modelOptions;
         const trajectoryOptions = this.trajectoryOptions;
+        const entry = this.state.entries.get(trajectoryOptions[0][0]);
+        let details: TrajectoryDetails | undefined;
+        if (entry) {
+            details = {
+                name: entry.name,
+                description: entry.description,
+                source: entry.source
+            };
+        }
+
         this.setState({
             modelRef: modelOptions[0][0],
             trajectoryId: trajectoryOptions[0][0],
+            trajectoryDetails: details,
         });
     }
 
@@ -132,6 +151,18 @@ export class XTCStreamControls extends PurePluginUIComponent<XTCStreamControlPro
                 break;
             case 'trajectory':
                 state.trajectoryId = p.value;
+
+                const entry = this.state.entries.get(state.trajectoryId);
+                let details: TrajectoryDetails | undefined;
+                if (entry) {
+                    details = {
+                        name: entry.name,
+                        description: entry.description,
+                        source: entry.source
+                    };
+                }
+                state.trajectoryDetails = details;
+
                 break;
         }
         this.setState(state);
@@ -194,6 +225,17 @@ export class XTCStreamControls extends PurePluginUIComponent<XTCStreamControlPro
         }
     };
 
+    private renderTrajectoryInfo(trajectory: TrajectoryDetails) {
+        return <div style={{ marginBottom: 10, marginTop: 5 }}>
+            <div className='msp-help-text'>
+                <div><b><i>Current Trajectory:</i></b></div>
+                <div>Name: <i>{`${trajectory.name}`}</i></div>
+                {trajectory.description.length !== 0 ? <div>Description: <i>{`${trajectory.description}`}</i></div> : null}
+                {trajectory.source ? <div>Source: <i>{`${trajectory.source}`}</i></div> : null}
+            </div>
+        </div>;
+    }
+
     render() {
         const canApply = this.canApply();
 
@@ -209,6 +251,7 @@ export class XTCStreamControls extends PurePluginUIComponent<XTCStreamControlPro
                 <IconButton svg={RefreshSvg} className='msp-url-refresh-btn' onClick={this.refresh} />
             </div>
             <SelectControl param={param.trajectory} name='trajectory' value={value.trajectory} onChange={(e) => { this.onControlChanged(e); }} />
+            {this.state.entries && this.state.trajectoryDetails ? this.renderTrajectoryInfo(this.state.trajectoryDetails) : null}
             <Button icon={canApply ? CheckSvg : void 0} className={`msp-btn-commit msp-btn-commit-${canApply ? 'on' : 'off'}`} onClick={this.apply} disabled={!canApply} style={{ marginTop: 1 }}>
                 Add Stream Trajectory
             </Button>

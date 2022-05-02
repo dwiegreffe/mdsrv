@@ -25,7 +25,7 @@ import { BehaviorSubject } from 'rxjs';
 import { useBehavior } from './hooks/use-behavior';
 import { ExpandButton } from './controls/common';
 
-export class Plugin extends React.Component<{ plugin: PluginUIContext }, {}> {
+export class Plugin extends React.Component<{ plugin: PluginUIContext, children?: any }, {}> {
     region(kind: 'left' | 'right' | 'bottom' | 'main', element: JSX.Element) {
         return <div className={`msp-layout-region msp-layout-${kind}`}>
             <div className='msp-layout-static'>
@@ -41,7 +41,7 @@ export class Plugin extends React.Component<{ plugin: PluginUIContext }, {}> {
     }
 }
 
-export class PluginContextContainer extends React.Component<{ plugin: PluginUIContext }> {
+export class PluginContextContainer extends React.Component<{ plugin: PluginUIContext, children?: any }> {
     render() {
         return <PluginReactContext.Provider value={this.props.plugin}>
             <div className='msp-plugin'>
@@ -166,7 +166,7 @@ class Layout extends PluginUIComponent {
                     {layout.showControls && controls.extension !== 'none' && this.region('extension', controls.extension || ExtensionPanelControls)}
                 </div>
                 {!this.plugin.spec.components?.hideTaskOverlay && <OverlayTaskProgress />}
-                <DragOverlay plugin={this.plugin} showDragOverlay={this.showDragOverlay} />
+                {!this.plugin.spec.components?.disableDragOverlay && <DragOverlay plugin={this.plugin} showDragOverlay={this.showDragOverlay} />}
             </div>
         </div>;
     }

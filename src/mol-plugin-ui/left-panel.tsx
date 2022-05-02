@@ -87,7 +87,9 @@ export class LeftPanelControls extends PluginUIComponent<{}, { tab: LeftPanelTab
             <SectionHeader icon={HomeOutlinedSvg} title='Home' toggle={() => this.set('root')} />
             <StateObjectActions state={this.plugin.state.data} nodeRef={StateTransform.RootRef} hideHeader={true} initiallyCollapsed={true} alwaysExpandFirst={false} />
             <CustomImportControls />
-            <RemoteSessionSnapshots listOnly expanded />
+            <div style={{ marginTop: '10px' }}>
+                <RemoteSessionSnapshots listOnly expanded />
+            </div>
             {/* {this.plugin.spec.components?.remoteState !== 'none' && <RemoteStateSnapshots listOnly /> } */}
         </>,
         'data': <>

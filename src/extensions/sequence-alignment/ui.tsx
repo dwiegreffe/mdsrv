@@ -87,7 +87,7 @@ export class SequenceAlignmentUI extends CollapsableControls<{}, State_> {
         alignment.wrapper.forEach((w, i) => {
             const wrapper = w.wrapper;
             const elem = typeof wrapper === 'string'
-                ? <div key={i} className='msp-alignment-sequence msp-sequence-wrapper'>{w}</div>
+                ? <div key={i} className='msp-alignment-sequence msp-sequence-wrapper'><>{w}</></div>
                 : <div><AlignmentSequence key={i} sequenceWrapper={wrapper} sequenceAlignment={w.alignmentSequence} index={w.startIndex} hideSequenceNumbers={true} /></div>;
 
             const lab = <div className='msp-alignment-label msp-sequence-chain-label'>{w.chainLabel}</div>;

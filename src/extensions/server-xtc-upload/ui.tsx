@@ -8,10 +8,12 @@ import { CollapsableControls } from '../../mol-plugin-ui/base';
 import { Button } from '../../mol-plugin-ui/controls/common';
 import { CloudUploadSvg, ShowChart } from '../../mol-plugin-ui/controls/icons';
 import { ParameterControls } from '../../mol-plugin-ui/controls/parameters';
+import { sleep } from '../../mol-util/sleep';
 import { UploadParams, XTCUploadControls } from './controls';
 
 interface State {
     busy?: boolean,
+    message?: string | undefined,
 }
 
 export class XTCUploadUI extends CollapsableControls<{}, State> {
@@ -21,20 +23,26 @@ export class XTCUploadUI extends CollapsableControls<{}, State> {
         return this._controls || (this._controls = new XTCUploadControls(this.plugin));
     }
 
+    private uploadMessage: React.CSSProperties = {
+        textAlign: 'center',
+        color: '#68BEFD',
+        fontWeight: 'bold',
+    };
+
     protected defaultState() {
         return {
             isCollapsed: true,
             header: 'Add Trajectory to Stream Server',
             brand: { accent: 'gray' as const, svg: ShowChart },
             isHidden: false,
-            hoverInfo: ''
+            hoverInfo: '',
         };
     }
 
     protected renderControls(): JSX.Element {
         const ctrl = this.controls;
         const params = ctrl.behaviors.params.value;
-        const complete = (params.name === '' || params.description === '' || params.url === '') ? true : false;
+        const complete = (params.name === '' || params.description === '' || params.url === '' || params.source === '') ? true : false;
 
         return <>
             <ParameterControls
@@ -44,6 +52,7 @@ export class XTCUploadUI extends CollapsableControls<{}, State> {
                 isDisabled={this.state.busy}
             />
             <div className="msp-flex-row">
+                {this.state.message !== undefined && <p className='msp-label-empty' style={this.uploadMessage}>{this.state.message}</p>}
                 <Button icon={CloudUploadSvg} onClick={this.upload} disabled={this.state.busy || complete} commit>
                     Upload Trajectory to Server
                 </Button>
@@ -65,8 +74,10 @@ export class XTCUploadUI extends CollapsableControls<{}, State> {
     upload = async () => {
         try {
             this.setState({ busy: true });
-            await this.controls.upload();
-            this.setState({ busy: false });
+            const message = await this.controls.upload();
+            this.setState({ busy: false, message: message });
+            await sleep(5000);
+            this.setState({ message: undefined });
         } finally {
             this.setState({ busy: false });
         }

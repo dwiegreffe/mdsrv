@@ -332,7 +332,7 @@ export class LinePlot extends PluginUIComponent<PlotProps, PlotState> {
         const plotWidth = values.length * this.xSpacing + width + 100;
 
         return <div className='msp-plot'>
-            <svg className='msp-plot-left-label'><g>{this.yTicks}</g></svg>
+            <svg className='msp-plot-left-label'><>{this.yTicks}</></svg>
             <div className='msp-plot-path-container'>
                 <svg className='msp-plot-path'
                     width={plotWidth}
@@ -340,11 +340,13 @@ export class LinePlot extends PluginUIComponent<PlotProps, PlotState> {
                     onMouseLeave={this.mouseLeave}
                     onClick={this.onClick}
                 >
-                    {this.grid}
-                    {this.xTicks}
-                    <g><path d={this.path} strokeWidth='2' stroke={this.props.plotParams.lineColor} fill='none' /></g>
-                    {this.marker(values, this.props.dict)}
-                    {this.hover(values)}
+                    <>
+                        {this.grid}
+                        {this.xTicks}
+                        <g><path d={this.path} strokeWidth='2' stroke={this.props.plotParams.lineColor} fill='none' /></g>
+                        {this.marker(values, this.props.dict)}
+                        {this.hover(values)}
+                    </>
                 </svg>
             </div>
         </div>;

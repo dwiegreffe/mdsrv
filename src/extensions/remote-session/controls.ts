@@ -11,25 +11,28 @@ import { ParamDefinition as PD } from '../../mol-util/param-definition';
 
 export const DefaultSessionServerURL = 'https://remote.sca-ds.de';
 
+export const ServerParam = {
+    serverURL: PD.Text(DefaultSessionServerURL),
+};
+
 export const RemoteSessionParams = {
     name: PD.Text(),
-    options: PD.Group({
-        description: PD.Text(),
-        playOnLoad: PD.Boolean(false),
-        serverURL: PD.Text(DefaultSessionServerURL)
-    })
+    description: PD.Text(),
+    source: PD.Text(),
 };
 
 export class RemoteSessionControls extends PluginComponent {
     readonly behaviors = {
+        serverUrl: this.ev.behavior<PD.Values<typeof ServerParam>>(PD.getDefaultValues(ServerParam)),
         params: this.ev.behavior<PD.Values<typeof RemoteSessionParams>>(PD.getDefaultValues(RemoteSessionParams))
     };
 
     upload = async () => {
         await PluginCommands.State.Snapshots.UploadSession(this.plugin, {
             name: this.behaviors.params.value.name,
-            description: this.behaviors.params.value.options.description,
-            serverUrl: this.behaviors.params.value.options.serverURL,
+            description: this.behaviors.params.value.description,
+            source: this.behaviors.params.value.source,
+            serverUrl: this.behaviors.serverUrl.value.serverURL,
             type: 'molx'
         });
     };

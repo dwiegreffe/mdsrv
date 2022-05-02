@@ -191,10 +191,24 @@ export const SkipToFrame = StateAction.build({
 export function sortPlot(values: PlotValue[], sorting: string): PlotValue[] {
     switch (sorting) {
         case 'frames': return values.sort((a, b) => (a.frame > b.frame) ? 1 : -1);
-        // case 'asc': return values.sort((a, b) => (a.value > b.value) ? 1 : -1);
-        // case 'desc': return values.sort((a, b) => (a.value < b.value) ? 1 : -1);
+        case 'asc': return values.sort((a, b) => sortAsc(a, b));
+        case 'desc': return values.sort((a, b) => sortDesc(a, b));
         default: return values;
     }
+}
+
+function sortAsc(a: PlotValue, b: PlotValue) {
+    if (!a.value) return 1;
+    else if (!b.value) return -1;
+    else if (a.value > b.value) return 1;
+    else return -1;
+}
+
+function sortDesc(a: PlotValue, b: PlotValue) {
+    if (!b.value) return -1;
+    else if (!a.value) return 1;
+    else if (a.value < b.value) return 1;
+    else return -1;
 }
 
 export function dictPlot(values: PlotValue[]) {

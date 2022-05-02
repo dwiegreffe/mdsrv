@@ -196,10 +196,10 @@ export function Snapshots(ctx: PluginContext) {
         return ctx.managers.snapshot.open(new File([data], `state.${type}`));
     });
 
-    PluginCommands.State.Snapshots.UploadSession.subscribe(ctx, async ({ name, description, serverUrl, type, params }) => {
+    PluginCommands.State.Snapshots.UploadSession.subscribe(ctx, async ({ name, description, source, serverUrl, type, params }) => {
         const data = await ctx.managers.snapshot.serialize({ type, params });
         return await fetch(urlCombine(serverUrl,
-            `set/session/?name=${encodeURIComponent(name || '')}&description=${encodeURIComponent(description || '')}&version=${encodeURIComponent(VERSION)}`), {
+            `set/session/?name=${encodeURIComponent(name || '')}&description=${encodeURIComponent(description || '')}&source=${encodeURIComponent(source || '')}&version=${encodeURIComponent(VERSION)}`), {
             method: 'POST',
             mode: 'cors',
             referrer: 'no-referrer',

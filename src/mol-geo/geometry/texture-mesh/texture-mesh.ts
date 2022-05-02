@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2019-2021 mol* contributors, licensed under MIT, See LICENSE file for more info.
+ * Copyright (c) 2019-2022 mol* contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Alexander Rose <alexander.rose@weirdbyte.de>
  */
@@ -24,6 +24,7 @@ import { Vec2, Vec4 } from '../../../mol-math/linear-algebra';
 import { createEmptyClipping } from '../clipping-data';
 import { NullLocation } from '../../../mol-model/location';
 import { createEmptySubstance } from '../substance-data';
+import { RenderableState } from '../../../mol-gl/renderable';
 
 export interface TextureMesh {
     readonly kind: 'texture-mesh',
@@ -113,6 +114,7 @@ export namespace TextureMesh {
         flatShaded: PD.Boolean(false, BaseGeometry.ShadingCategory),
         ignoreLight: PD.Boolean(false, BaseGeometry.ShadingCategory),
         xrayShaded: PD.Boolean(false, BaseGeometry.ShadingCategory),
+        transparentBackfaces: PD.Select('off', PD.arrayToOptions(['off', 'on', 'opaque']), BaseGeometry.ShadingCategory),
         bumpFrequency: PD.Numeric(0, { min: 0, max: 10, step: 0.1 }, BaseGeometry.ShadingCategory),
         bumpAmplitude: PD.Numeric(1, { min: 0, max: 5, step: 0.1 }, BaseGeometry.ShadingCategory),
     };
@@ -125,8 +127,8 @@ export namespace TextureMesh {
         createValuesSimple,
         updateValues,
         updateBoundingSphere,
-        createRenderableState: BaseGeometry.createRenderableState,
-        updateRenderableState: BaseGeometry.updateRenderableState,
+        createRenderableState,
+        updateRenderableState,
         createPositionIterator: () => LocationIterator(1, 1, 1, () => NullLocation)
     };
 
@@ -172,6 +174,7 @@ export namespace TextureMesh {
             dFlipSided: ValueCell.create(props.flipSided),
             dIgnoreLight: ValueCell.create(props.ignoreLight),
             dXrayShaded: ValueCell.create(props.xrayShaded),
+            dOpaqueBackfaces: ValueCell.create(props.transparentBackfaces === 'opaque'),
             uBumpFrequency: ValueCell.create(props.bumpFrequency),
             uBumpAmplitude: ValueCell.create(props.bumpAmplitude),
 
@@ -192,6 +195,7 @@ export namespace TextureMesh {
         ValueCell.updateIfChanged(values.dFlipSided, props.flipSided);
         ValueCell.updateIfChanged(values.dIgnoreLight, props.ignoreLight);
         ValueCell.updateIfChanged(values.dXrayShaded, props.xrayShaded);
+        ValueCell.updateIfChanged(values.dOpaqueBackfaces, props.transparentBackfaces === 'opaque');
         ValueCell.updateIfChanged(values.uBumpFrequency, props.bumpFrequency);
         ValueCell.updateIfChanged(values.uBumpAmplitude, props.bumpAmplitude);
     }
@@ -207,5 +211,17 @@ export namespace TextureMesh {
             ValueCell.update(values.invariantBoundingSphere, invariantBoundingSphere);
             ValueCell.update(values.uInvariantBoundingSphere, Vec4.fromSphere(values.uInvariantBoundingSphere.ref.value, invariantBoundingSphere));
         }
+    }
+
+    function createRenderableState(props: PD.Values<Params>): RenderableState {
+        const state = BaseGeometry.createRenderableState(props);
+        updateRenderableState(state, props);
+        return state;
+    }
+
+    function updateRenderableState(state: RenderableState, props: PD.Values<Params>) {
+        BaseGeometry.updateRenderableState(state, props);
+        state.opaque = state.opaque && !props.xrayShaded;
+        state.writeDepth = state.opaque;
     }
 }

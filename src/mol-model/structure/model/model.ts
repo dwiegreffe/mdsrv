@@ -30,6 +30,7 @@ import { Trajectory, ArrayTrajectory } from '../trajectory';
 import { Unit } from '../structure';
 import { SortedArray } from '../../../mol-data/int/sorted-array';
 import { PolymerType } from './types';
+import { ModelSecondaryStructure } from '../../../mol-model-formats/structure/property/secondary-structure';
 
 /**
  * Interface to the "source data" of the molecule.
@@ -99,9 +100,14 @@ export namespace Model {
         const isIdentity = Column.isIdentity(srcIndex);
         const srcIndexArray = isIdentity ? void 0 : srcIndex.toArray({ array: Int32Array });
         const coarseGrained = isCoarseGrained(model);
+        const elementCount = model.atomicHierarchy.atoms._rowCount;
 
         for (let i = 0, il = frames.length; i < il; ++i) {
             const f = frames[i];
+            if (f.elementCount !== elementCount) {
+                throw new Error(`Frame element count mismatch, got ${f.elementCount} but expected ${elementCount}.`);
+            }
+
             const m = {
                 ...model,
                 id: UUID.create22(),
@@ -297,7 +303,7 @@ export namespace Model {
         if (!MmcifFormat.is(model.sourceData)) return false;
         const { db } = model.sourceData.data;
         for (let i = 0, il = db.database_2.database_id.rowCount; i < il; ++i) {
-            if (db.database_2.database_id.value(i) === 'PDB') return true;
+            if (db.database_2.database_id.value(i) === 'pdb') return true;
         }
         return false;
     }
@@ -313,12 +319,15 @@ export namespace Model {
     }
 
     export function hasSecondaryStructure(model: Model): boolean {
-        if (!MmcifFormat.is(model.sourceData)) return false;
-        const { db } = model.sourceData.data;
-        return (
-            db.struct_conf.id.isDefined ||
-            db.struct_sheet_range.id.isDefined
-        );
+        if (MmcifFormat.is(model.sourceData)) {
+            const { db } = model.sourceData.data;
+            return (
+                db.struct_conf.id.isDefined ||
+                db.struct_sheet_range.id.isDefined
+            );
+        } else {
+            return ModelSecondaryStructure.Provider.isApplicable(model);
+        }
     }
 
     const tmpAngles90 = Vec3.create(1.5707963, 1.5707963, 1.5707963); // in radians

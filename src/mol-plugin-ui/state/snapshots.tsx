@@ -183,7 +183,7 @@ export class LocalStateSnapshotList extends PluginUIComponent<{}, {}> {
     }
 }
 
-export type RemoteEntry = { url: string, removeUrl: string, timestamp: number, id: string, name: string, description: string, version?: string, isSticky?: boolean }
+export type RemoteEntry = { url: string, removeUrl: string, timestamp: number, id: string, name: string, description: string, source?: string, version?: string, isSticky?: boolean }
 export class RemoteStateSnapshots extends PluginUIComponent<
 { listOnly?: boolean },
 { params: PD.Values<RemoteStateSnapshots['Params']>, entries: OrderedMap<string, RemoteEntry>, isBusy: boolean }> {
@@ -357,7 +357,7 @@ export class RemoteStateSnapshotList extends PurePluginUIComponent<
             {this.props.entries.valueSeq().map(e => <li key={e!.id} className='msp-flex-row'>
                 <Button data-id={e!.id} onClick={this.props.fetch}
                     disabled={this.props.isBusy} onContextMenu={this.open} title='Click to download, right-click to open in a new tab.'>
-                    {e!.name || new Date(e!.timestamp).toLocaleString()} <small>{e!.description} {e!.version ? `(Release: ${e!.version})` : null}</small>
+                    {e!.name || new Date(e!.timestamp).toLocaleString()} <small>{e!.description} {e!.source && e!.source.length !== 0 ? `(Source: ${e!.source})` : null} {e!.version ? `(Release: ${e!.version})` : null}</small>
                 </Button>
                 {!e!.isSticky && this.props.remove && <IconButton svg={DeleteOutlinedSvg} data-id={e!.id} title='Remove' onClick={this.props.remove} disabled={this.props.isBusy} small />}
             </li>)}

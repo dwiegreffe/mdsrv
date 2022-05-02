@@ -29,7 +29,7 @@ app.use(compression(<any>{ level: 6, memLevel: 9, chunkSize: 16 * 16384, filter:
 app.use(cors({ methods: ['GET', 'PUT'] }));
 app.use(bodyParser.raw({ inflate: true, type: 'application/zip', limit: '1gb' }));
 
-type Entry = { timestamp: number, id: string, name: string, description: string }
+type Entry = { timestamp: number, id: string, name: string, description: string, source: string }
 
 type SessionEntry = Entry & {version: string, isSticky?: boolean}
 type SessionIndex = SessionEntry[]
@@ -141,10 +141,11 @@ app.post(mapPath('/set/session'), (req, res) => {
     const blob = req.body;
 
     const name = (req.query.name as string || new Date().toUTCString()).substr(0, 50);
-    const description = (req.query.description as string || '').substr(0, 100);
+    const description = (req.query.description as string || '');
+    const source = (req.query.source as string || '');
     const version = req.query.version as string;
 
-    index.push({ timestamp: +new Date(), id: UUID.createv4(), name, description, version });
+    index.push({ timestamp: +new Date(), id: UUID.createv4(), name, description, source, version });
     const entry = index[index.length - 1] as SessionEntry;
 
     fs.writeFile(path.join(`${Config.working_folder}/session`, `${entry.id}.molx`), blob, () => res.end());
@@ -153,13 +154,14 @@ app.post(mapPath('/set/session'), (req, res) => {
 
 // TRAJECTORY
 
-app.get(mapPath(`/upload/trajectory/:url/:name/:description`), (req, res) => {
+app.get(mapPath(`/upload/trajectory/:url/:name/:description/:source`), (req, res) => {
     console.log('UPLOAD TRAJECTORY', req.params.url, req.params.name, req.params.description);
     const index = readIndex('trajectory') as TrajectoryIndex;
 
     const url: string = req.params.url;
     const name = (req.params.name as string || new Date().toUTCString());
     const description = (req.params.description as string || '');
+    const source = (req.params.source as string || '');
 
     const fn = `${Config.working_folder}/trajectory/${name}.xtc`;
 
@@ -187,7 +189,7 @@ app.get(mapPath(`/upload/trajectory/:url/:name/:description`), (req, res) => {
             });
 
             body.on('end', () => {
-                index.push({ timestamp: +new Date(), id: name, name, description });
+                index.push({ timestamp: +new Date(), id: name, name, description, source });
                 writeIndex('trajectory', index);
                 console.log(`Trajectory ${name}.xtc uploaded`);
                 res.write('Trajectory uploaded.');
