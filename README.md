@@ -8,7 +8,7 @@ MDsrv is a web tool for interactive and remote exploration of trajectories. Inte
     Checkout Repo
 
     Build Viewer:
-        Go to folder docker/viewer
+        Go to folder docker/<your-architecture>/viewer
         Run the following command: docker build --no-cache -t proteinvis/mdsrv-viewer .
         Start it with “docker run -p 80:4242 proteinvis/mdsrv-viewer https://remote.sca-ds.de”
 
@@ -16,8 +16,10 @@ MDsrv is a web tool for interactive and remote exploration of trajectories. Inte
 
         “docker run -p 80:4242 dwiegreffe/mdsrv-viewer your-url.here”
 
+        Access the viewer at [http://127.0.0.1:80](http://127.0.0.1:80).
+
     Build Remote Server:
-        Go to folder docker/server
+        Go to folder docker/<your-architecture>/server
         Run the following command: docker build --no-cache -t proteinvis/mdsrv-remote .
         Start the container: docker run -p 1337:1337 -v /path/to/mdsrv/server:/mdsrv/server proteinvis/mdsrv-remote
 
