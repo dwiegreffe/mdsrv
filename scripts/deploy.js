@@ -17,6 +17,26 @@ const deployDir = path.resolve(buildDir, 'deploy/');
 const localPath = path.resolve(deployDir, 'molstar.github.io/');
 
 // HTML placeholder tag and the analytics snippet to inject into generated pages
+//
+// About the Cloudflare Web Analytics snippet below:
+// - Purpose: Adds lightweight, privacy-focused page analytics to the generated static
+//   pages (viewer and demos). It helps track page views, referrers, popular pages,
+//   and basic performance metrics (e.g., TTFB, FCP) so we can understand usage and
+//   improve the experience.
+// - How it works: During deployment, we replace a placeholder comment in the built
+//   HTML (<!-- __MOLSTAR_ANALYTICS__ -->) with Cloudflare’s beacon <script>. The
+//   script sends anonymous usage and performance signals to Cloudflare’s analytics
+//   endpoint. No cookies are used and no personal data is stored by the beacon.
+// - Token: The data-cf-beacon "token" identifies our site in Cloudflare’s
+//   analytics backend. It is not a secret; it’s safe to commit and publish.
+// - Performance: The script is loaded with the "defer" attribute so it won’t block
+//   the page from rendering. If the network blocks the script (e.g., offline or CSP),
+//   the page still works and analytics are simply unavailable.
+// - Security/CSP: If a Content Security Policy is enforced, make sure to allow
+//   'https://static.cloudflareinsights.com' in the script-src directive; otherwise,
+//   the beacon might be blocked.
+// - Opt-out/Removal: To disable analytics for a page/template, remove the
+//   placeholder from the HTML or change the replacement logic below.
 const analyticsTag = /<!-- __MOLSTAR_ANALYTICS__ -->/g;
 const analyticsCode = `<!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "c414cbae2d284ea995171a81e4a3e721"}'></script><!-- End Cloudflare Web Analytics -->`;
 

@@ -71,6 +71,7 @@ Session index entry:
   "isSticky": false
 }
 ```
+
 Trajectory index entry:
 
 ```json
@@ -143,6 +144,7 @@ This endpoint imports ("mirrors") an external XTC file by streaming it from the 
 # URL-encode: https://data.example.org/md/traj.xtc -> https:%2F%2Fdata.example.org%2Fmd%2Ftraj.xtc
 curl "http://localhost:1337/upload/trajectory/https:%2F%2Fdata.example.org%2Fmd%2Ftraj.xtc/Run01/First%20Simulation/SystemA"
 ```
+
 Multi-part descriptions and sources should be URL-encoded (e.g. spaces → `%20`).
 
 ### Security / Risks

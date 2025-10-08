@@ -2,10 +2,16 @@
 <html lang="en">
     <head>
         <meta charset="utf-8" />
+        <!-- Controls page scaling and zoom behavior. Here, user zoom is disabled and
+             the minimum/maximum scale is fixed to keep the viewer layout consistent. -->
         <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+        <!-- Favicon shown in the browser tab -->
         <link rel="icon" href="./favicon.ico" type="image/x-icon">
         <title>Embedded Mol* Viewer</title>
         <style>
+            /* Container for the Mol* viewer canvas and UI.
+               - Absolute positioning places it 100px from the top-left of the page.
+               - Fixed width/height create a predictable area for the 3D scene and panels. */
             #app {
                 position: absolute;
                 left: 100px;
@@ -14,29 +20,49 @@
                 height: 600px;
             }
         </style>
+        <!-- Mol* stylesheet: provides base UI styles (panels, controls, fonts) -->
         <link rel="stylesheet" type="text/css" href="molstar.css" />
     </head>
     <body>
+        <!-- Mount point for the Mol* Viewer instance (referenced by its id "app") -->
         <div id="app"></div>
+
+        <!-- Mol* viewer bundle: exposes the global `molstar` namespace used below -->
         <script type="text/javascript" src="./molstar.js"></script>
+
         <script type="text/javascript">
+            // Initialize a Mol* Viewer inside the element with id 'app'.
+            // This returns a Promise that resolves with the viewer API when ready.
             molstar.Viewer.create('app', {
-                layoutIsExpanded: true,
-                layoutShowControls: false,
-                layoutShowRemoteState: false,
-                layoutShowSequence: true,
-                layoutShowLog: false,
-                layoutShowLeftPanel: true,
+                // --- Layout / UI configuration ---
+                layoutIsExpanded: true,          // Use the full size of #app for the viewer layout
+                layoutShowControls: false,       // Hide the top control strip for a cleaner look
+                layoutShowRemoteState: false,    // Hide collaborative/remote state indicators
+                layoutShowSequence: true,        // Show the sequence panel (select residues from sequence)
+                layoutShowLog: false,            // Hide the log panel (status/diagnostic messages)
+                layoutShowLeftPanel: true,       // Show the left sidebar (data tree, presets, representations)
 
-                viewportShowExpand: true,
-                viewportShowSelectionMode: false,
-                viewportShowAnimation: false,
+                // --- Viewport controls (inside the 3D canvas) ---
+                viewportShowExpand: true,        // Show a button to expand the 3D canvas area
+                viewportShowSelectionMode: false,// Hide selection mode toggles (atom/chain/box, etc.)
+                viewportShowAnimation: false,    // Hide animation transport controls
 
-                pdbProvider: 'rcsb',
-                emdbProvider: 'rcsb',
+                // --- Data providers for convenience loader methods ---
+                pdbProvider: 'rcsb',             // Source for PDB IDs used in viewer.loadPdb(...)
+                emdbProvider: 'rcsb',            // Source for EMDB IDs used in viewer.loadEmdb(...)
             }).then(viewer => {
+                // The viewer is ready here. Use high-level helpers to load data:
+
+                // Load a PDB entry by its 4-letter id from the configured provider.
+                // Adds default structure representations.
                 viewer.loadPdb('7bv2');
+
+                // Load an EMDB map by its accession (EMD-xxxxx).
+                // The 'detail' option controls server-side downsampling for performance.
                 viewer.loadEmdb('EMD-30210', { detail: 6 });
+
+                // Example: load models/assemblies from a custom URL with optional theming.
+                // Keeps as a single-line example to avoid altering behavior.
                 // viewer.loadAllModelsOrAssemblyFromUrl('https://cs.litemol.org/5ire/full', 'mmcif', false, { representationParams: { theme: { globalName: 'operator-name' } } })
             });
         </script>
