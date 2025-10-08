@@ -4,19 +4,23 @@
  * @author Alexander Rose <alexander.rose@weirdbyte.de>
  */
 
+// Load required dependencies
 const git = require('simple-git');
 const path = require('path');
 const fs = require("fs");
 const fse = require("fs-extra");
 
+// Remote deployment repo URL and local build/deploy paths
 const remoteUrl = "https://github.com/molstar/molstar.github.io.git";
 const buildDir = path.resolve(__dirname, '../build/');
 const deployDir = path.resolve(buildDir, 'deploy/');
 const localPath = path.resolve(deployDir, 'molstar.github.io/');
 
+// HTML placeholder tag and the analytics snippet to inject into generated pages
 const analyticsTag = /<!-- __MOLSTAR_ANALYTICS__ -->/g;
 const analyticsCode = `<!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "c414cbae2d284ea995171a81e4a3e721"}'></script><!-- End Cloudflare Web Analytics -->`;
 
+// simple-git output handler: pipe Git command output to the current process
 function log(command, stdout, stderr) {
     if (command) {
         console.log('\n###', command);
@@ -25,12 +29,14 @@ function log(command, stdout, stderr) {
     }
 }
 
+// Replace the analytics placeholder in the given HTML file with the actual analytics code
 function addAnalytics(path) {
     const data = fs.readFileSync(path, 'utf8');
     const result = data.replace(analyticsTag, analyticsCode);
     fs.writeFileSync(path, result, 'utf8');
 }
 
+// Copy the built viewer artifacts into the local deployment repo and inject analytics into index.html
 function copyViewer() {
     console.log('\n###', 'copy viewer files');
     const viewerBuildPath = path.resolve(buildDir, '../build/viewer/');
@@ -39,6 +45,7 @@ function copyViewer() {
     addAnalytics(path.resolve(viewerDeployPath, 'index.html'));
 }
 
+// Copy example demos (lighting and alpha-orbitals) into the deployment repo and inject analytics
 function copyDemos() {
     console.log('\n###', 'copy demos files');
     const lightingBuildPath = path.resolve(buildDir, '../build/examples/lighting/');
@@ -52,36 +59,54 @@ function copyDemos() {
     addAnalytics(path.resolve(orbitalsDeployPath, 'index.html'));
 }
 
+// Orchestrate copying of all required files into the deployment repo
 function copyFiles() {
     copyViewer();
     copyDemos();
 }
 
+// Ensure the local deployment path exists (creates nested directories if needed)
 if (!fs.existsSync(localPath)) {
     console.log('\n###', 'create localPath');
     fs.mkdirSync(localPath, { recursive: true });
 }
 
+// Switch current working directory to the local deployment repository path
 process.chdir(localPath);
 
+// If the local repo is not initialized yet, clone it; otherwise, update it, then copy and push changes
 if (!fs.existsSync(path.resolve(localPath, '.git/'))) {
     console.log('\n###', 'clone repository');
     git()
+        // Show Git command outputs in the console
         .outputHandler(log)
+        // Clone the remote GitHub Pages repository into the local path
         .clone(remoteUrl, localPath)
+        // Fetch all refs from the remote
         .fetch(['--all'])
+        // Copy build artifacts (viewer & demos) into the local repo
         .exec(copyFiles)
+        // Stage all changes
         .add(['-A'])
+        // Create a commit for the updated assets
         .commit('updated viewer & demos')
+        // Push the commit to the remote repository
         .push();
 } else {
     console.log('\n###', 'update repository');
     git()
+        // Show Git command outputs in the console
         .outputHandler(log)
+        // Fetch the latest changes from the remote
         .fetch(['--all'])
+        // Reset local state to match origin/master (clean slate)
         .reset(['--hard', 'origin/master'])
+        // Copy build artifacts (viewer & demos) into the local repo
         .exec(copyFiles)
+        // Stage all changes
         .add(['-A'])
+        // Create a commit for the updated assets
         .commit('updated viewer & demos')
+        // Push the commit to the remote repository
         .push();
 }
