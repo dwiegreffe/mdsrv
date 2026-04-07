@@ -58,3 +58,34 @@ docker logs -t <container>
 # stop container
 docker stop <container>
 ```
+
+## Git remotes and branch strategy (mdsrv-anno)
+
+This repository is now set up with a dedicated `anno/*` branch namespace so work on the annotation-focused version does not interfere with other active branches.
+
+### Remote naming
+
+- `origin`: canonical remote for this project (`mdsrv-anno` on GitLab)
+- `fork-source`: original upstream fork source (former `origin`, GitHub)
+
+Why this naming:
+
+- `origin` stays the default target for day-to-day pushes and PRs for this project.
+- `fork-source` makes it explicit where this codebase was forked from.
+
+### Branch naming
+
+- `anno/develop`: integration branch for ongoing annotation-focused development
+- `anno/feature/<ticket>-<short-name>`: short-lived feature branches
+- `anno/release/vX.Y`: release preparation branch
+- `anno/stable/vX.Y`: stable maintenance branch for patch-level fixes
+- `anno/hotfix/vX.Y.Z-<short-name>`: urgent production fixes
+
+Recommended examples:
+
+- `anno/feature/MD-142-special-yml-support`
+- `anno/release/v2.4`
+- `anno/stable/v2.4`
+- `anno/hotfix/v2.4.1-yml-null-fix`
+
+Use tags instead of a moving `latest` branch, e.g. `anno-v2.4.0`.
