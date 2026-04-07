@@ -109,8 +109,11 @@ RUN \
         cd mdsrv && \
         NODE_ENV=production npm run build
 
+COPY inject-request-logs.js /tmp/inject-request-logs.js
+
+RUN node /tmp/inject-request-logs.js /mdsrv/lib/commonjs/extensions/remote-session/server/index.js && rm /tmp/inject-request-logs.js
+
 
 EXPOSE 1337
 
 CMD  cd mdsrv && node lib/commonjs/extensions/remote-session/server/index.js --working-folder ./server --port 1337
-
