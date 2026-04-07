@@ -1,0 +1,26 @@
+services:
+  mdsrv-proxy:
+    image: nginx:alpine
+    depends_on:
+      - mdsrv-remote-session
+      - mdsrv-yml-server
+    ports:
+      - '1337:1337'
+    volumes:
+      - ./docker/proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+
+  mdsrv-remote-session:
+    build:
+      context: .
+      dockerfile: docker/server/Dockerfile
+      target: remote-session-runtime
+    volumes:
+      - ./docker/data/remote-session:/mdsrv/remote-session
+
+  mdsrv-yml-server:
+    build:
+      context: .
+      dockerfile: docker/server/Dockerfile
+      target: yml-server-runtime
+    volumes:
+      - ./docker/data/yml:/mdsrv/yml-server

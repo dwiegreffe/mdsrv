@@ -1,0 +1,6 @@
+{
+  "forbiddenWords": ["password", "secret"],
+  "forbiddenKeys": ["debug", "internal"],
+  "requiredKeys": ["name", "version"],
+  "maxFileSizeBytes": 65536
+}

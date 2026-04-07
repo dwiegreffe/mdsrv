@@ -2,6 +2,7 @@
 
 The state of the plugin is represented by a JS Object with these components (described in more detail below):
 
+
 ```ts
 interface Snapshot {
     // Snapshot of data state tree

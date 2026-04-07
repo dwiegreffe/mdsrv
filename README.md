@@ -7,29 +7,66 @@ MDsrv is a web tool for interactive and remote exploration of trajectories. Inte
 
 Checkout repo.
 
-### Build and run remote server
+### Build and run servers
 
-#### ARM64 (Apple Silicon / ARM Linux)
+This setup uses one shared multi-stage app Dockerfile and one shared Docker Compose file for both ARM64 and AMD64.
 
-From project root:
+#### Docker Compose (recommended)
+
+This starts separate services with separate host data directories:
+
+- remote session / trajectory streaming on `http://127.0.0.1:1337`
+- YAML file API on `http://127.0.0.1:1337/yml`
+
+Internally this uses three containers:
+
+- `mdsrv-remote-session`
+- `mdsrv-yml-server`
+- `mdsrv-proxy`
+
+Both are reachable through the same host IP and the same external port from outside Docker.
+
+Build and start:
 
 ```bash
-docker build --no-cache -f docker/server/Dockerfile.arm64 -t proteinvis/mdsrv-remote:arm64 .
-docker run --rm -p 1337:1337 -v "/path/to/mdsrv/server:/mdsrv/server" proteinvis/mdsrv-remote:arm64
+docker compose up --build
 ```
 
-The server is available at `http://127.0.0.1:1337`.
-
-#### x86_64 (AMD64)
-
-From project root:
+Run in background:
 
 ```bash
-docker build --no-cache -t proteinvis/mdsrv-remote ./docker/server
-docker run --rm -p 1337:1337 -v "/path/to/mdsrv/server:/mdsrv/server" proteinvis/mdsrv-remote
+docker compose up --build -d
 ```
 
-The server is available at `http://127.0.0.1:1337`.
+Stop:
+
+```bash
+docker compose down
+```
+
+The split host data directories are:
+
+- `docker/data/remote-session/`
+- `docker/data/yml/`
+
+Both services are reachable through the same host IP and the same external port from outside Docker:
+
+- `<host-ip>:1337` for remote session / trajectory streaming
+- `<host-ip>:1337/yml` for the YAML API
+
+#### Build minimized runtime images directly
+
+Build the remote-session runtime image:
+
+```bash
+docker build --target remote-session-runtime -f docker/server/Dockerfile -t mdsrv-remote-session .
+```
+
+Build the YAML server runtime image:
+
+```bash
+docker build --target yml-server-runtime -f docker/server/Dockerfile -t mdsrv-yml-server .
+```
 
 ### Build and run viewer
 
@@ -58,6 +95,17 @@ docker logs -t <container>
 # stop container
 docker stop <container>
 ```
+
+## Docker Compose
+
+For the split setup with separate containers and separate host data directories:
+
+- remote session / trajectory streaming on `1337`
+- YAML file API on `1337/yml`
+
+see [docs/docker-compose.md](docs/docker-compose.md).
+
+Standalone YAML server endpoint and storage details are documented in [docs/yml-server.md](docs/yml-server.md).
 
 ## Git remotes and branch strategy (mdsrv-anno)
 

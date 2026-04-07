@@ -1,0 +1,10 @@
+.git
+.DS_Store
+node_modules
+lib
+build
+coverage
+server
+docker/data
+npm-debug.log
+yarn-error.log
