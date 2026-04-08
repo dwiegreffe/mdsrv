@@ -1,0 +1,206 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "MDsrv API",
+    "version": "1.0.0",
+    "description": "Unified public API for session, trajectory, and YAML file operations."
+  },
+  "tags": [
+    { "name": "Session" },
+    { "name": "Trajectory" },
+    { "name": "YAML" }
+  ],
+  "paths": {
+    "/api/v1/session": {
+      "get": {
+        "tags": ["Session"],
+        "summary": "List stored sessions",
+        "responses": { "200": { "description": "Session list", "content": { "application/json": {} } } }
+      },
+      "post": {
+        "tags": ["Session"],
+        "summary": "Upload a Mol* session ZIP",
+        "parameters": [
+          { "name": "name", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "description", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "source", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "version", "in": "query", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/zip": { "schema": { "type": "string", "format": "binary" } }
+          }
+        },
+        "responses": { "200": { "description": "Upload complete" } }
+      }
+    },
+    "/api/v1/session/{id}": {
+      "get": {
+        "tags": ["Session"],
+        "summary": "Download a stored session",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Session ZIP", "content": { "application/zip": {} } } }
+      },
+      "delete": {
+        "tags": ["Session"],
+        "summary": "Delete a stored session",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Deleted" } }
+      }
+    },
+    "/api/v1/trajectory": {
+      "get": {
+        "tags": ["Trajectory"],
+        "summary": "List stored trajectories",
+        "responses": { "200": { "description": "Trajectory list", "content": { "application/json": {} } } }
+      },
+      "post": {
+        "tags": ["Trajectory"],
+        "summary": "Fetch and store a trajectory from a URL",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["url", "name"],
+                "properties": {
+                  "url": { "type": "string" },
+                  "name": { "type": "string" },
+                  "description": { "type": "string" },
+                  "source": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Upload complete" },
+          "400": { "description": "Invalid request" },
+          "409": { "description": "Name already exists" }
+        }
+      }
+    },
+    "/api/v1/trajectory/{id}": {
+      "delete": {
+        "tags": ["Trajectory"],
+        "summary": "Delete a stored trajectory",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Deleted" } }
+      }
+    },
+    "/api/v1/trajectory/{id}/starts": {
+      "get": {
+        "tags": ["Trajectory"],
+        "summary": "Get trajectory frame start offsets",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Frame starts", "content": { "text/plain": {} } } }
+      }
+    },
+    "/api/v1/trajectory/{id}/frame/offset/{start}/{end}": {
+      "get": {
+        "tags": ["Trajectory"],
+        "summary": "Get one trajectory frame by offset range",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "start", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "end", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Frame payload", "content": { "application/json": {} } } }
+      }
+    },
+    "/api/v1/yaml": {
+      "get": {
+        "tags": ["YAML"],
+        "summary": "List available YAML files",
+        "responses": { "200": { "description": "YAML file names", "content": { "application/json": {} } } }
+      }
+    },
+    "/api/v1/yaml/{name}": {
+      "get": {
+        "tags": ["YAML"],
+        "summary": "Read a YAML file",
+        "parameters": [
+          { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "YAML content", "content": { "text/yaml": {} } } }
+      },
+      "put": {
+        "tags": ["YAML"],
+        "summary": "Create a new YAML file",
+        "parameters": [
+          { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "text/yaml": { "schema": { "type": "string" } },
+            "application/x-yaml": { "schema": { "type": "string" } },
+            "text/plain": { "schema": { "type": "string" } }
+          }
+        },
+        "responses": {
+          "201": { "description": "Created" },
+          "400": { "description": "Invalid YAML or rule violation" },
+          "409": { "description": "File exists" }
+        }
+      },
+      "post": {
+        "tags": ["YAML"],
+        "summary": "Update an existing YAML file",
+        "parameters": [
+          { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "text/yaml": { "schema": { "type": "string" } },
+            "application/x-yaml": { "schema": { "type": "string" } },
+            "text/plain": { "schema": { "type": "string" } }
+          }
+        },
+        "responses": {
+          "200": { "description": "Updated" },
+          "400": { "description": "Invalid YAML or rule violation" },
+          "404": { "description": "Missing file" }
+        }
+      },
+      "delete": {
+        "tags": ["YAML"],
+        "summary": "Delete a YAML file",
+        "parameters": [
+          { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Deleted" },
+          "404": { "description": "Missing file" }
+        }
+      }
+    },
+    "/api/v1/yaml/{name}/rename": {
+      "post": {
+        "tags": ["YAML"],
+        "summary": "Rename a YAML file",
+        "parameters": [
+          { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "to", "in": "query", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Renamed" },
+          "400": { "description": "Invalid name" },
+          "404": { "description": "Missing source" },
+          "409": { "description": "Target exists" }
+        }
+      }
+    }
+  }
+}

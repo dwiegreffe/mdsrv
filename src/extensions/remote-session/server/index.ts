@@ -23,11 +23,13 @@ import { getData, getFrameData } from './helper/helper';
 import { rejects } from 'assert';
 
 const Config = getConfig();
+const ApiRoot = '/api/v1';
 
 const app = express();
 app.use(compression(<any>{ level: 6, memLevel: 9, chunkSize: 16 * 16384, filter: () => true }));
-app.use(cors({ methods: ['GET', 'PUT'] }));
+app.use(cors({ methods: ['GET', 'PUT', 'POST', 'DELETE'] }));
 app.use(bodyParser.raw({ inflate: true, type: 'application/zip', limit: '1gb' }));
+app.use(bodyParser.json({ limit: '1mb' }));
 
 type Entry = { timestamp: number, id: string, name: string, description: string, source: string }
 
@@ -93,9 +95,38 @@ function removeSession(id: string) {
     }
 }
 
-app.get(mapPath(`/get/session/:id/`), (req, res) => {
-    const id: string = req.params.id || '';
-    console.log('READING SESSION', id);
+function removeTrajectory(id: string) {
+    const index = readIndex('trajectory') as TrajectoryIndex;
+    let i = 0;
+    for (const e of index) {
+        if (e.id !== id) {
+            i++;
+            continue;
+        }
+        try {
+            for (let j = i + 1; j < index.length; j++) {
+                index[j - 1] = index[j];
+            }
+            index.pop();
+            writeIndex('trajectory', index);
+        } catch { }
+        try {
+            fs.unlinkSync(path.join(`${Config.working_folder}/trajectory`, `${e.id}.xtc`));
+        } catch { }
+        return;
+    }
+}
+
+function sendIndex(res: express.Response, type: 'session' | 'trajectory') {
+    const index = readIndex(type);
+    res.writeHead(200, {
+        'Content-Type': 'application/json; charset=utf-8',
+    });
+    res.write(JSON.stringify(index, null, 2));
+    res.end();
+}
+
+function sendSession(id: string, res: express.Response) {
     if (id.length === 0 || id.indexOf('.') >= 0 || id.indexOf('/') >= 0 || id.indexOf('\\') >= 0) {
         res.status(404);
         res.end();
@@ -116,58 +147,68 @@ app.get(mapPath(`/get/session/:id/`), (req, res) => {
         res.write(data);
         res.end();
     });
-});
+}
 
-app.get(mapPath(`/remove/session/:id`), (req, res) => {
-    removeSession((req.params.id as string || '').toLowerCase());
-    res.status(200);
-    res.end();
-});
+function sendTrajectoryStarts(id: string, res: express.Response) {
+    const p = path.join(`${Config.working_folder}/trajectory`, `${id}.xtc`);
 
-app.get(mapPath(`/list/:type`), (req, res) => {
-    const type: string = req.params.type || '';
-    const index = readIndex(type);
-    res.writeHead(200, {
-        'Content-Type': 'application/json; charset=utf-8',
+    getData(p).then((value) => {
+        res.write(`${value}`);
+        res.end();
+    }).catch((error) => {
+        console.log(error);
+        res.status(404);
+        res.end();
     });
-    res.write(JSON.stringify(index, null, 2));
-    res.end();
-});
+}
 
-app.post(mapPath('/set/session'), (req, res) => {
-    console.log('SET SESSION', req.query.name, req.query.description, req.query.version);
+function sendTrajectoryFrame(id: string, tmpStart: string, tmpEnd: string, res: express.Response) {
+    let start: number = -1;
+    let end: number = -1;
+
+    try {
+        start = parseInt(tmpStart);
+        end = (tmpEnd === 'Infinity') ? Infinity : parseInt(tmpEnd);
+    } catch (e) {
+        console.log(e);
+        res.status(404);
+        res.end();
+        return;
+    }
+    if (start === -1 || end === -1) {
+        res.status(404);
+        res.end();
+        return;
+    }
+
+    const p = path.join(`${Config.working_folder}/trajectory`, `${id}.xtc`);
+
+    getFrameData(p, start, end).then((file) => {
+        res.json(file);
+        res.end();
+    }).catch((error) => {
+        console.log(error);
+        res.status(404);
+        res.end();
+    });
+}
+
+function storeSession(blob: Buffer, name: string, description: string, source: string, version: string, res: express.Response) {
     const index = readIndex('session') as SessionIndex;
-
-    const blob = req.body;
-
-    const name = (req.query.name as string || new Date().toUTCString()).substr(0, 50);
-    const description = (req.query.description as string || '');
-    const source = (req.query.source as string || '');
-    const version = req.query.version as string;
-
     index.push({ timestamp: +new Date(), id: UUID.createv4(), name, description, source, version });
     const entry = index[index.length - 1] as SessionEntry;
 
     fs.writeFile(path.join(`${Config.working_folder}/session`, `${entry.id}.molx`), blob, () => res.end());
     writeIndex('session', index);
-});
+}
 
-// TRAJECTORY
-
-app.get(mapPath(`/upload/trajectory/:url/:name/:description/:source`), (req, res) => {
-    console.log('UPLOAD TRAJECTORY', req.params.url, req.params.name, req.params.description);
+function uploadTrajectory(url: string, name: string, description: string, source: string, res: express.Response) {
     const index = readIndex('trajectory') as TrajectoryIndex;
-
-    const url: string = req.params.url;
-    const name = (req.params.name as string || new Date().toUTCString());
-    const description = (req.params.description as string || '');
-    const source = (req.params.source as string || '');
-
     const fn = `${Config.working_folder}/trajectory/${name}.xtc`;
 
     if (fs.existsSync(fn)) {
+        res.status(409);
         res.write('File name already exists. Pick different file name.');
-        console.log(`File name ${name} already exists. Return`);
         res.end();
         return;
     }
@@ -205,60 +246,111 @@ app.get(mapPath(`/upload/trajectory/:url/:name/:description/:source`), (req, res
             console.log('Error while fetching:');
             console.log(error);
             fs.unlinkSync(fn);
+            res.status(400);
             res.write(`${error}`);
             res.end();
         });
+}
+
+app.get(mapPath(`/get/session/:id/`), (req, res) => {
+    const id: string = req.params.id || '';
+    console.log('READING SESSION', id);
+    sendSession(id, res);
+});
+
+app.get(mapPath(`/remove/session/:id`), (req, res) => {
+    removeSession((req.params.id as string || '').toLowerCase());
+    res.status(200);
+    res.end();
+});
+
+app.get(mapPath(`/list/:type`), (req, res) => {
+    const type = req.params.type === 'trajectory' ? 'trajectory' : 'session';
+    sendIndex(res, type);
+});
+
+app.post(mapPath('/set/session'), (req, res) => {
+    console.log('SET SESSION', req.query.name, req.query.description, req.query.version);
+    const blob = req.body;
+
+    const name = (req.query.name as string || new Date().toUTCString()).substr(0, 50);
+    const description = (req.query.description as string || '');
+    const source = (req.query.source as string || '');
+    const version = req.query.version as string;
+
+    storeSession(blob, name, description, source, version, res);
+});
+
+// TRAJECTORY
+
+app.get(mapPath(`/upload/trajectory/:url/:name/:description/:source`), (req, res) => {
+    console.log('UPLOAD TRAJECTORY', req.params.url, req.params.name, req.params.description);
+
+    const url: string = req.params.url;
+    const name = (req.params.name as string || new Date().toUTCString());
+    const description = (req.params.description as string || '');
+    const source = (req.params.source as string || '');
+
+    uploadTrajectory(url, name, description, source, res);
+});
+
+app.get(`${ApiRoot}/session`, (req, res) => sendIndex(res, 'session'));
+app.get(`${ApiRoot}/trajectory`, (req, res) => sendIndex(res, 'trajectory'));
+
+app.get(`${ApiRoot}/session/:id`, (req, res) => {
+    sendSession(req.params.id || '', res);
+});
+
+app.delete(`${ApiRoot}/session/:id`, (req, res) => {
+    removeSession(req.params.id as string || '');
+    res.status(200);
+    res.end();
+});
+
+app.post(`${ApiRoot}/session`, (req, res) => {
+    const blob = req.body;
+    const name = (req.query.name as string || new Date().toUTCString()).substr(0, 50);
+    const description = (req.query.description as string || '');
+    const source = (req.query.source as string || '');
+    const version = req.query.version as string;
+    storeSession(blob, name, description, source, version, res);
+});
+
+app.post(`${ApiRoot}/trajectory`, (req, res) => {
+    const url = req.body?.url as string;
+    const name = (req.body?.name as string || new Date().toUTCString());
+    const description = (req.body?.description as string || '');
+    const source = (req.body?.source as string || '');
+    if (!url) {
+        res.status(400);
+        res.json({ errors: [{ code: 'missing_url', message: 'Trajectory upload requires a source URL.' }] });
+        return;
+    }
+    uploadTrajectory(url, name, description, source, res);
+});
+
+app.delete(`${ApiRoot}/trajectory/:id`, (req, res) => {
+    removeTrajectory(req.params.id as string || '');
+    res.status(200);
+    res.end();
+});
+
+app.get(`${ApiRoot}/trajectory/:id/starts`, (req, res) => {
+    sendTrajectoryStarts(req.params.id || '', res);
+});
+
+app.get(`${ApiRoot}/trajectory/:id/frame/offset/:start/:end`, (req, res) => {
+    sendTrajectoryFrame(req.params.id || '', req.params.start || '-1', req.params.end || '-1', res);
 });
 
 app.get(mapPath(`/get/trajectory/:id/starts`), (req, res) => {
     const id: string = req.params.id || '';
-
-    const p = path.join(`${Config.working_folder}/trajectory`, `${id}.xtc`);
-
-    getData(p).then((value) => {
-        res.write(`${value}`);
-        res.end();
-    }).catch((error) => {
-        console.log(error);
-        res.status(404);
-        res.end();
-        return;
-    });
+    sendTrajectoryStarts(id, res);
 });
 
 app.get(mapPath(`/get/trajectory/:id/frame/offset/:start/:end`), (req, res) => {
     const id: string = req.params.id || '';
-    const tmpStart: string = req.params.start || '-1';
-    const tmpEnd: string = req.params.end || '-1';
-    let start: number = -1;
-    let end: number = -1;
-
-    try {
-        start = parseInt(tmpStart);
-        end = (tmpEnd === 'Infinity') ? Infinity : parseInt(tmpEnd);
-    } catch (e) {
-        console.log(e);
-        res.status(404);
-        res.end();
-        return;
-    }
-    if (start === -1 || end === -1) {
-        res.status(404);
-        res.end();
-        return;
-    }
-
-    const p = path.join(`${Config.working_folder}/trajectory`, `${id}.xtc`);
-
-    getFrameData(p, start, end).then((file) => {
-        res.json(file);
-        res.end();
-    }).catch((error) => {
-        console.log(error);
-        res.status(404);
-        res.end();
-        return;
-    });
+    sendTrajectoryFrame(id, req.params.start || '-1', req.params.end || '-1', res);
 });
 
 const schema = getSchema(Config);

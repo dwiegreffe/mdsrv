@@ -10,16 +10,16 @@ export function getSchema(config: Config) {
         openapi: '3.0.0',
         info: {
             version: VERSION,
-            title: 'YML Server',
+            title: 'YAML Server',
             description: 'A simple service for storing and validating YAML files.'
         },
-        tags: [{ name: 'General' }],
+        tags: [{ name: 'YAML' }],
         paths: {
-            [mapPath('yml')]: {
+            [mapPath('api/v1/yaml')]: {
                 get: {
-                    tags: ['General'],
+                    tags: ['YAML'],
                     summary: 'Returns a JSON array of available YAML file names.',
-                    operationId: 'listYml',
+                    operationId: 'listYaml',
                     parameters: [],
                     responses: {
                         200: {
@@ -29,20 +29,20 @@ export function getSchema(config: Config) {
                     }
                 }
             },
-            [mapPath('yml/{name}')]: {
+            [mapPath('api/v1/yaml/{name}')]: {
                 get: {
-                    tags: ['General'],
+                    tags: ['YAML'],
                     summary: 'Returns the YAML file content with the given file name.',
-                    operationId: 'getYml',
+                    operationId: 'getYaml',
                     parameters: [{ name: 'name', in: 'path', description: 'YAML file name including .yml or .yaml suffix.', required: true, schema: { type: 'string' }, style: 'simple' }],
                     responses: {
                         200: { description: 'The YAML file content.', content: { 'text/yaml': {} } }
                     }
                 },
                 put: {
-                    tags: ['General'],
+                    tags: ['YAML'],
                     summary: 'Creates a new YAML file. Fails if the file already exists.',
-                    operationId: 'createYml',
+                    operationId: 'createYaml',
                     requestBody: {
                         content: {
                             'text/yaml': { schema: { type: 'string' } },
@@ -58,9 +58,9 @@ export function getSchema(config: Config) {
                     }
                 },
                 post: {
-                    tags: ['General'],
+                    tags: ['YAML'],
                     summary: 'Updates an existing YAML file. Fails if the file does not exist.',
-                    operationId: 'updateYml',
+                    operationId: 'updateYaml',
                     requestBody: {
                         content: {
                             'text/yaml': { schema: { type: 'string' } },
@@ -76,9 +76,9 @@ export function getSchema(config: Config) {
                     }
                 },
                 delete: {
-                    tags: ['General'],
+                    tags: ['YAML'],
                     summary: 'Removes an existing YAML file.',
-                    operationId: 'deleteYml',
+                    operationId: 'deleteYaml',
                     parameters: [{ name: 'name', in: 'path', description: 'YAML file name including .yml or .yaml suffix.', required: true, schema: { type: 'string' }, style: 'simple' }],
                     responses: {
                         200: { description: 'File removed.', content: { 'text/plain': {} } },
@@ -86,11 +86,11 @@ export function getSchema(config: Config) {
                     }
                 }
             },
-            [mapPath('yml/{name}/rename')]: {
+            [mapPath('api/v1/yaml/{name}/rename')]: {
                 post: {
-                    tags: ['General'],
+                    tags: ['YAML'],
                     summary: 'Renames an existing YAML file.',
-                    operationId: 'renameYml',
+                    operationId: 'renameYaml',
                     parameters: [
                         { name: 'name', in: 'path', description: 'Current YAML file name including .yml or .yaml suffix.', required: true, schema: { type: 'string' }, style: 'simple' },
                         { name: 'to', in: 'query', description: 'Target YAML file name including .yml or .yaml suffix.', required: true, schema: { type: 'string' }, style: 'simple' }

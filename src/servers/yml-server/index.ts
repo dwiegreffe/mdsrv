@@ -10,6 +10,7 @@ import { getSchema, shortcutIconLink } from './api-schema';
 
 const Config = getConfig();
 const YmlValidationConfig = readYmlValidationConfig(Config);
+const ApiRoot = '/api/v1/yaml';
 
 const app = express();
 app.use(compression(<any>{ level: 6, memLevel: 9, chunkSize: 16 * 16384, filter: () => true }));
@@ -26,12 +27,12 @@ function writeError(res: express.Response, status: number, message: string, rule
     res.json({ errors: [{ rule: rule || 'request', message }] });
 }
 
-app.get(mapPath('/yml'), (req, res) => {
+app.get(mapPath(ApiRoot), (req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(listYmlFiles(Config)));
 });
 
-app.get(mapPath('/yml/:name'), (req, res) => {
+app.get(mapPath(`${ApiRoot}/:name`), (req, res) => {
     let name: string;
     try {
         name = normalizeYmlName(req.params.name || '');
@@ -49,7 +50,7 @@ app.get(mapPath('/yml/:name'), (req, res) => {
     });
 });
 
-app.put(mapPath('/yml/:name'), (req, res) => {
+app.put(mapPath(`${ApiRoot}/:name`), (req, res) => {
     let name: string;
     try {
         name = normalizeYmlName(req.params.name || '');
@@ -72,7 +73,7 @@ app.put(mapPath('/yml/:name'), (req, res) => {
     });
 });
 
-app.post(mapPath('/yml/:name'), (req, res) => {
+app.post(mapPath(`${ApiRoot}/:name`), (req, res) => {
     let name: string;
     try {
         name = normalizeYmlName(req.params.name || '');
@@ -95,7 +96,7 @@ app.post(mapPath('/yml/:name'), (req, res) => {
     });
 });
 
-app.post(mapPath('/yml/:name/rename'), (req, res) => {
+app.post(mapPath(`${ApiRoot}/:name/rename`), (req, res) => {
     let sourceName: string;
     let targetName: string;
     try {
@@ -116,7 +117,7 @@ app.post(mapPath('/yml/:name/rename'), (req, res) => {
     });
 });
 
-app.delete(mapPath('/yml/:name'), (req, res) => {
+app.delete(mapPath(`${ApiRoot}/:name`), (req, res) => {
     let name: string;
     try {
         name = normalizeYmlName(req.params.name || '');

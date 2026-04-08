@@ -10,8 +10,10 @@ It uses one shared Compose file and one shared multi-stage app Dockerfile on bot
 
 Both services are reachable through the same host IP address and the same external port from outside Docker:
 
-- `<host-ip>:1337/` for remote session / trajectory streaming
-- `<host-ip>:1337/yml...` for the YAML API
+- `<host-ip>:1337/docs` for unified API docs
+- `<host-ip>:1337/api/v1/session...` for session endpoints
+- `<host-ip>:1337/api/v1/trajectory...` for trajectory endpoints
+- `<host-ip>:1337/api/v1/yaml...` for the YAML API
 
 The storage is intentionally split into two host directories so the data stays separated.
 
@@ -48,7 +50,8 @@ docker compose down
 From another machine on the network, replace `127.0.0.1` with the host machine IP. Example:
 
 - `http://192.168.1.50:1337`
-- `http://192.168.1.50:1337/yml`
+- `http://192.168.1.50:1337/docs`
+- `http://192.168.1.50:1337/api/v1/yaml`
 
 ## Services
 
@@ -56,7 +59,7 @@ From another machine on the network, replace `127.0.0.1` with the host machine I
 
 Available at:
 
-- `http://127.0.0.1:1337`
+- `http://127.0.0.1:1337/api/v1/session`
 
 This is the existing remote-session server for sessions and trajectory streaming.
 
@@ -68,7 +71,7 @@ Its files are stored in:
 
 Available at:
 
-- `http://127.0.0.1:1337/yml`
+- `http://127.0.0.1:1337/api/v1/yaml`
 
 This runs the standalone YAML server.
 
@@ -79,6 +82,10 @@ Its files are stored in:
 YAML files are written under:
 
 - `docker/data/yml/files/`
+
+Unified docs are available at:
+
+- `http://127.0.0.1:1337/docs`
 
 ## Build minimized runtime images directly
 
@@ -99,7 +106,7 @@ docker build --target yml-server-runtime -f docker/server/Dockerfile -t mdsrv-ym
 Create a file:
 
 ```bash
-curl -i -X PUT "http://127.0.0.1:1337/yml/test.yml" \
+curl -i -X PUT "http://127.0.0.1:1337/api/v1/yaml/test.yml" \
   -H "Content-Type: text/yaml" \
   --data-binary $'name: test\nversion: 1\n'
 ```
@@ -107,19 +114,19 @@ curl -i -X PUT "http://127.0.0.1:1337/yml/test.yml" \
 List files:
 
 ```bash
-curl http://127.0.0.1:1337/yml
+curl http://127.0.0.1:1337/api/v1/yaml
 ```
 
 Read file:
 
 ```bash
-curl http://127.0.0.1:1337/yml/test.yml
+curl http://127.0.0.1:1337/api/v1/yaml/test.yml
 ```
 
 Update file:
 
 ```bash
-curl -i -X POST "http://127.0.0.1:1337/yml/test.yml" \
+curl -i -X POST "http://127.0.0.1:1337/api/v1/yaml/test.yml" \
   -H "Content-Type: text/yaml" \
   --data-binary $'name: test\nversion: 2\n'
 ```
@@ -127,13 +134,13 @@ curl -i -X POST "http://127.0.0.1:1337/yml/test.yml" \
 Rename file:
 
 ```bash
-curl -i -X POST "http://127.0.0.1:1337/yml/test.yml/rename?to=test-v2.yml"
+curl -i -X POST "http://127.0.0.1:1337/api/v1/yaml/test.yml/rename?to=test-v2.yml"
 ```
 
 Delete file:
 
 ```bash
-curl -i -X DELETE "http://127.0.0.1:1337/yml/test-v2.yml"
+curl -i -X DELETE "http://127.0.0.1:1337/api/v1/yaml/test-v2.yml"
 ```
 
 ## Validation rules

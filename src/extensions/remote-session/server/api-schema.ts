@@ -19,93 +19,31 @@ export function getSchema(config: Config) {
         openapi: '3.0.0',
         info: {
             version: VERSION,
-            title: 'PluginSession Server',
-            description: 'The PluginSession Server is a simple service for storing and retreiving sessions of the Mol* Viewer app.',
+            title: 'MDsrv API',
+            description: 'Session and trajectory endpoints for the MDsrv server.',
         },
         tags: [
-            {
-                name: 'General',
-            }
+            { name: 'Session' },
+            { name: 'Trajectory' }
         ],
         paths: {
-            [mapPath(`list/{type}`)]: {
+            [mapPath('api/v1/session')]: {
                 get: {
-                    tags: ['General'],
-                    summary: 'Returns a JSON response with the list of currently stored sessions',
-                    operationId: 'list',
-                    parameters: [
-                        {
-                            name: 'type',
-                            in: 'path',
-                            description: 'List type (session | trajectory).',
-                            requires: true,
-                            schema: { type: 'string ' },
-                            style: 'simple'
-                        }
-                    ],
+                    tags: ['Session'],
+                    summary: 'Returns the list of stored sessions.',
+                    operationId: 'listSessions',
+                    parameters: [],
                     responses: {
                         200: {
-                            description: 'A list of stored sessions or trajectories.',
-                            content: {
-                                'application/json': { }
-                            }
+                            description: 'A list of stored sessions.',
+                            content: { 'application/json': {} }
                         }
                     },
-                }
-            },
-            [mapPath(`get/session/{id}`)]: {
-                get: {
-                    tags: ['General'],
-                    summary: 'Returns the Mol* Viewer session with the given id',
-                    operationId: 'get',
-                    parameters: [
-                        {
-                            name: 'id',
-                            in: 'path',
-                            description: `Id of the session.`,
-                            required: true,
-                            schema: { type: 'string' },
-                            style: 'simple'
-                        },
-                    ],
-                    responses: {
-                        200: {
-                            description: 'Session as zip.',
-                            content: {
-                                'application/zip': { }
-                            }
-                        }
-                    },
-                }
-            },
-            [mapPath(`remove/session/{id}`)]: {
-                get: {
-                    tags: ['General'],
-                    summary: 'Removes the Mol* Viewer session with the given id.',
-                    operationId: 'remove',
-                    parameters: [
-                        {
-                            name: 'id',
-                            in: 'path',
-                            description: `Id of the session.`,
-                            required: true,
-                            schema: { type: 'string' },
-                            style: 'simple'
-                        }
-                    ],
-                    responses: {
-                        200: {
-                            description: 'Empty response.',
-                            content: { 'text/plain': { } }
-                        }
-                    },
-                }
-            },
-            [mapPath(`set/session`)]: {
+                },
                 post: {
-                    tags: ['General'],
-                    summary: `Post Mol* Viewer session to the server.`,
-                    operationId: 'set',
+                    tags: ['Session'],
+                    summary: 'Uploads a Mol* Viewer session to the server.',
+                    operationId: 'createSession',
                     requestBody: {
                         content: {
                             'application/zip': {
@@ -117,7 +55,7 @@ export function getSchema(config: Config) {
                         {
                             name: 'name',
                             in: 'query',
-                            description: `Name of the session. If none provided, current UTC date-time is used.`,
+                            description: 'Name of the session. If none provided, current UTC date-time is used.',
                             required: false,
                             schema: { type: 'string' },
                             style: 'simple'
@@ -125,7 +63,7 @@ export function getSchema(config: Config) {
                         {
                             name: 'description',
                             in: 'query',
-                            description: `Description of the session.`,
+                            description: 'Description of the session.',
                             required: false,
                             schema: { type: 'string' },
                             style: 'simple'
@@ -142,21 +80,121 @@ export function getSchema(config: Config) {
                     responses: {
                         200: {
                             description: 'Empty response.',
-                            content: { 'text/plain': { } }
+                            content: { 'text/plain': {} }
                         }
                     },
                 }
             },
-            [mapPath(`get/trajectory/{id}/starts`)]: {
+            [mapPath('api/v1/session/{id}')]: {
                 get: {
-                    tags: ['General'],
-                    summary: 'Returns an array for the offset bits for all frame starts of the trajectory with the given id.',
-                    operationId: 'get',
+                    tags: ['Session'],
+                    summary: 'Returns the Mol* Viewer session with the given id.',
+                    operationId: 'getSession',
                     parameters: [
                         {
                             name: 'id',
                             in: 'path',
-                            description: `Id of the trajectory.`,
+                            description: 'Id of the session.',
+                            required: true,
+                            schema: { type: 'string' },
+                            style: 'simple'
+                        }
+                    ],
+                    responses: {
+                        200: {
+                            description: 'Session as zip.',
+                            content: { 'application/zip': {} }
+                        }
+                    },
+                },
+                delete: {
+                    tags: ['Session'],
+                    summary: 'Removes the Mol* Viewer session with the given id.',
+                    operationId: 'deleteSession',
+                    parameters: [
+                        {
+                            name: 'id',
+                            in: 'path',
+                            description: 'Id of the session.',
+                            required: true,
+                            schema: { type: 'string' },
+                            style: 'simple'
+                        }
+                    ],
+                    responses: {
+                        200: {
+                            description: 'Empty response.',
+                            content: { 'text/plain': {} }
+                        }
+                    },
+                }
+            },
+            [mapPath('api/v1/trajectory')]: {
+                get: {
+                    tags: ['Trajectory'],
+                    summary: 'Returns the list of stored trajectories.',
+                    operationId: 'listTrajectories',
+                    parameters: [],
+                    responses: {
+                        200: {
+                            description: 'A list of stored trajectories.',
+                            content: { 'application/json': {} }
+                        }
+                    },
+                },
+                post: {
+                    tags: ['Trajectory'],
+                    summary: 'Uploads a trajectory from a source URL.',
+                    operationId: 'createTrajectory',
+                    requestBody: {
+                        content: {
+                            'application/json': {
+                                schema: { type: 'object' }
+                            }
+                        }
+                    },
+                    parameters: [],
+                    responses: {
+                        200: {
+                            description: 'Upload status.',
+                            content: { 'text/plain': {} }
+                        }
+                    },
+                }
+            },
+            [mapPath('api/v1/trajectory/{id}')]: {
+                delete: {
+                    tags: ['Trajectory'],
+                    summary: 'Removes the trajectory with the given id.',
+                    operationId: 'deleteTrajectory',
+                    parameters: [
+                        {
+                            name: 'id',
+                            in: 'path',
+                            description: 'Id of the trajectory.',
+                            required: true,
+                            schema: { type: 'string' },
+                            style: 'simple'
+                        }
+                    ],
+                    responses: {
+                        200: {
+                            description: 'Empty response.',
+                            content: { 'text/plain': {} }
+                        }
+                    },
+                }
+            },
+            [mapPath('api/v1/trajectory/{id}/starts')]: {
+                get: {
+                    tags: ['Trajectory'],
+                    summary: 'Returns an array for the offset bits for all frame starts of the trajectory with the given id.',
+                    operationId: 'getTrajectoryStarts',
+                    parameters: [
+                        {
+                            name: 'id',
+                            in: 'path',
+                            description: 'Id of the trajectory.',
                             required: true,
                             schema: { type: 'string' },
                             style: 'simple'
@@ -165,21 +203,21 @@ export function getSchema(config: Config) {
                     responses: {
                         200: {
                             description: 'Array with frame starts.',
-                            content: { 'text/plain': { } }
+                            content: { 'text/plain': {} }
                         }
                     },
                 }
             },
-            [mapPath(`get/trajectory/{id}/frame/offset/{start}/{end}`)]: {
+            [mapPath('api/v1/trajectory/{id}/frame/offset/{start}/{end}')]: {
                 get: {
-                    tags: ['General'],
+                    tags: ['Trajectory'],
                     summary: 'Returns an XTCFile for a single frame of a trajectory with the given id.',
-                    operationId: 'get',
+                    operationId: 'getTrajectoryFrame',
                     parameters: [
                         {
                             name: 'id',
                             in: 'path',
-                            description: `Id of the trajectory.`,
+                            description: 'Id of the trajectory.',
                             required: true,
                             schema: { type: 'string' },
                             style: 'simple'
@@ -187,7 +225,7 @@ export function getSchema(config: Config) {
                         {
                             name: 'start',
                             in: 'path',
-                            description: `Start bit for reading this frame.`,
+                            description: 'Start bit for reading this frame.',
                             required: true,
                             schema: { type: 'string' },
                             style: 'simple'
@@ -195,7 +233,7 @@ export function getSchema(config: Config) {
                         {
                             name: 'end',
                             in: 'path',
-                            description: `Start bit of next frame.`,
+                            description: 'Start bit of next frame.',
                             required: true,
                             schema: { type: 'string' },
                             style: 'simple'
@@ -204,7 +242,7 @@ export function getSchema(config: Config) {
                     responses: {
                         200: {
                             description: 'XTCFile for the frame.',
-                            content: { 'application/json': { } }
+                            content: { 'application/json': {} }
                         }
                     },
                 }

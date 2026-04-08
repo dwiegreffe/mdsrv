@@ -20,61 +20,61 @@ This keeps user files separate from any server-owned files.
 
 In the Compose setup, both services are exposed through the same host IP and same external port via nginx:
 
-- remote session / trajectory streaming: `http://<host-ip>:1337/`
-- YAML API: `http://<host-ip>:1337/yml`
+- API docs: `http://<host-ip>:1337/docs`
+- YAML API: `http://<host-ip>:1337/api/v1/yaml`
 
 ## Endpoints
 
 ### List files
 
-`GET /yml`
+`GET /api/v1/yaml`
 
 ```bash
-curl http://127.0.0.1:1337/yml
+curl http://127.0.0.1:1337/api/v1/yaml
 ```
 
 ### Read a file
 
-`GET /yml/:name`
+`GET /api/v1/yaml/:name`
 
 ```bash
-curl http://127.0.0.1:1337/yml/test.yml
+curl http://127.0.0.1:1337/api/v1/yaml/test.yml
 ```
 
 ### Create a file
 
-`PUT /yml/:name`
+`PUT /api/v1/yaml/:name`
 
 ```bash
-curl -i -X PUT "http://127.0.0.1:1337/yml/test.yml" \
+curl -i -X PUT "http://127.0.0.1:1337/api/v1/yaml/test.yml" \
   -H "Content-Type: text/yaml" \
   --data-binary $'name: test\nversion: 1\n'
 ```
 
 ### Update a file
 
-`POST /yml/:name`
+`POST /api/v1/yaml/:name`
 
 ```bash
-curl -i -X POST "http://127.0.0.1:1337/yml/test.yml" \
+curl -i -X POST "http://127.0.0.1:1337/api/v1/yaml/test.yml" \
   -H "Content-Type: text/yaml" \
   --data-binary $'name: test\nversion: 2\n'
 ```
 
 ### Rename a file
 
-`POST /yml/:name/rename?to=new-name.yml`
+`POST /api/v1/yaml/:name/rename?to=new-name.yml`
 
 ```bash
-curl -i -X POST "http://127.0.0.1:1337/yml/test.yml/rename?to=test-v2.yml"
+curl -i -X POST "http://127.0.0.1:1337/api/v1/yaml/test.yml/rename?to=test-v2.yml"
 ```
 
 ### Remove a file
 
-`DELETE /yml/:name`
+`DELETE /api/v1/yaml/:name`
 
 ```bash
-curl -i -X DELETE "http://127.0.0.1:1337/yml/test-v2.yml"
+curl -i -X DELETE "http://127.0.0.1:1337/api/v1/yaml/test-v2.yml"
 ```
 
 ## Validation rules

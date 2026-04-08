@@ -15,8 +15,9 @@ This setup uses one shared multi-stage app Dockerfile and one shared Docker Comp
 
 This starts separate services with separate host data directories:
 
-- remote session / trajectory streaming on `http://127.0.0.1:1337`
-- YAML file API on `http://127.0.0.1:1337/yml`
+- API docs on `http://127.0.0.1:1337/docs`
+- remote session / trajectory streaming under `http://127.0.0.1:1337/api/v1/session`
+- YAML file API under `http://127.0.0.1:1337/api/v1/yaml`
 
 Internally this uses three containers:
 
@@ -51,8 +52,10 @@ The split host data directories are:
 
 Both services are reachable through the same host IP and the same external port from outside Docker:
 
-- `<host-ip>:1337` for remote session / trajectory streaming
-- `<host-ip>:1337/yml` for the YAML API
+- `<host-ip>:1337/docs` for API docs
+- `<host-ip>:1337/api/v1/session` for session endpoints
+- `<host-ip>:1337/api/v1/trajectory` for trajectory endpoints
+- `<host-ip>:1337/api/v1/yaml` for the YAML API
 
 #### Build minimized runtime images directly
 
@@ -100,8 +103,10 @@ docker stop <container>
 
 For the split setup with separate containers and separate host data directories:
 
-- remote session / trajectory streaming on `1337`
-- YAML file API on `1337/yml`
+- unified API docs on `/docs`
+- session API on `/api/v1/session`
+- trajectory API on `/api/v1/trajectory`
+- YAML API on `/api/v1/yaml`
 
 see [docs/docker-compose.md](docs/docker-compose.md).
 

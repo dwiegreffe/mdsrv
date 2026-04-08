@@ -8,6 +8,7 @@ services:
       - '1337:1337'
     volumes:
       - ./docker/proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/proxy/public:/usr/share/nginx/html:ro
 
   mdsrv-remote-session:
     build:
