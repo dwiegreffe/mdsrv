@@ -4,6 +4,8 @@ This document describes the standalone YAML server used in the Docker Compose se
 
 It is separate from the remote session / trajectory server.
 
+For external app developers, use the unified backend guide first: [api-usage-guide.md](api-usage-guide.md).
+
 ## Storage layout
 
 The YAML server uses its own dedicated host volume:

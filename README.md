@@ -112,6 +112,8 @@ see [docs/docker-compose.md](docs/docker-compose.md).
 
 Standalone YAML server endpoint and storage details are documented in [docs/yml-server.md](docs/yml-server.md).
 
+For external app developers, see the unified backend handoff guide: [docs/api-usage-guide.md](docs/api-usage-guide.md).
+
 ## Git remotes and branch strategy (mdsrv-anno)
 
 This repository is now set up with a dedicated `anno/*` branch namespace so work on the annotation-focused version does not interfere with other active branches.

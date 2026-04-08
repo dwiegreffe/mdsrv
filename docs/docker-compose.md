@@ -6,6 +6,8 @@ This setup runs three separate containers:
 - `mdsrv-yml-server` behind a reverse proxy
 - `mdsrv-proxy` as the single external entry point
 
+For external app developers, the recommended handoff document is [api-usage-guide.md](api-usage-guide.md).
+
 It uses one shared Compose file and one shared multi-stage app Dockerfile on both ARM64 and AMD64.
 
 Both services are reachable through the same host IP address and the same external port from outside Docker:
