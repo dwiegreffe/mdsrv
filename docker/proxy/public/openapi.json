@@ -3,11 +3,12 @@
   "info": {
     "title": "MDsrv API",
     "version": "1.0.0",
-    "description": "Unified public API for session, trajectory, and YAML file operations."
+    "description": "Unified public API for modular session, trajectory, topology, and YAML services."
   },
   "tags": [
     { "name": "Session" },
     { "name": "Trajectory" },
+    { "name": "Topology" },
     { "name": "YAML" }
   ],
   "paths": {
@@ -61,16 +62,17 @@
       },
       "post": {
         "tags": ["Trajectory"],
-        "summary": "Fetch and store a trajectory from a URL",
+        "summary": "Fetch and store an XTC trajectory from a URL",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["url", "name"],
+                "required": ["url", "id"],
                 "properties": {
                   "url": { "type": "string" },
+                  "id": { "type": "string" },
                   "name": { "type": "string" },
                   "description": { "type": "string" },
                   "source": { "type": "string" }
@@ -80,9 +82,9 @@
           }
         },
         "responses": {
-          "200": { "description": "Upload complete" },
+          "201": { "description": "Created" },
           "400": { "description": "Invalid request" },
-          "409": { "description": "Name already exists" }
+          "409": { "description": "Id already exists" }
         }
       }
     },
@@ -116,6 +118,62 @@
           { "name": "end", "in": "path", "required": true, "schema": { "type": "string" } }
         ],
         "responses": { "200": { "description": "Frame payload", "content": { "application/json": {} } } }
+      }
+    },
+    "/api/v1/topology": {
+      "get": {
+        "tags": ["Topology"],
+        "summary": "List stored PDB topology entries",
+        "responses": { "200": { "description": "Topology entries", "content": { "application/json": {} } } }
+      },
+      "post": {
+        "tags": ["Topology"],
+        "summary": "Fetch and store a PDB topology from a URL",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["url", "id", "fileName"],
+                "properties": {
+                  "url": { "type": "string" },
+                  "id": { "type": "string" },
+                  "fileName": { "type": "string" },
+                  "name": { "type": "string" },
+                  "description": { "type": "string" },
+                  "source": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Created" },
+          "400": { "description": "Invalid request" },
+          "409": { "description": "Id or file already exists" }
+        }
+      }
+    },
+    "/api/v1/topology/{id}": {
+      "get": {
+        "tags": ["Topology"],
+        "summary": "Read a stored PDB topology file",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "PDB content", "content": { "chemical/x-pdb": {} } } }
+      },
+      "delete": {
+        "tags": ["Topology"],
+        "summary": "Delete a stored topology",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Deleted" },
+          "404": { "description": "Missing topology" }
+        }
       }
     },
     "/api/v1/yaml": {

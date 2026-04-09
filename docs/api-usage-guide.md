@@ -24,6 +24,7 @@ Main API namespaces:
 
 - Session API: `/api/v1/session`
 - Trajectory API: `/api/v1/trajectory`
+- Topology API: `/api/v1/topology`
 - YAML API: `/api/v1/yaml`
 
 ## API overview
@@ -51,7 +52,18 @@ Endpoints:
 - `GET /api/v1/trajectory/:id/starts`
 - `GET /api/v1/trajectory/:id/frame/offset/:start/:end`
 
-### 3. YAML API
+### 3. Topology API
+
+Use this API to list, register, fetch, and delete stored PDB topology files.
+
+Endpoints:
+
+- `GET /api/v1/topology`
+- `POST /api/v1/topology`
+- `GET /api/v1/topology/:id`
+- `DELETE /api/v1/topology/:id`
+
+### 4. YAML API
 
 Use this API to manage user-editable YAML files on the server.
 
@@ -197,6 +209,41 @@ curl "http://127.0.0.1:1337/api/v1/trajectory/traj-001/frame/offset/0/1024"
 curl -i -X DELETE "http://127.0.0.1:1337/api/v1/trajectory/traj-001"
 ```
 
+## List topologies
+
+```bash
+curl http://127.0.0.1:1337/api/v1/topology
+```
+
+## Register a topology from a remote URL
+
+The server fetches the topology from the given URL and stores it locally.
+
+```bash
+curl -i -X POST "http://127.0.0.1:1337/api/v1/topology" \
+  -H "Content-Type: application/json" \
+  --data '{
+    "url": "https://files.rcsb.org/download/1CBS.pdb",
+    "id": "1cbs",
+    "fileName": "1cbs.pdb",
+    "name": "1CBS",
+    "description": "Example topology",
+    "source": "RCSB"
+  }'
+```
+
+## Read a topology
+
+```bash
+curl http://127.0.0.1:1337/api/v1/topology/1cbs
+```
+
+## Delete a topology
+
+```bash
+curl -i -X DELETE "http://127.0.0.1:1337/api/v1/topology/1cbs"
+```
+
 ## YAML file rules and validation
 
 The YAML API enforces file-level validation rules defined by the server host.
@@ -270,7 +317,8 @@ For external apps, treat `400`, `404`, and `409` as expected business/API errors
 2. load `/api/v1/openapi.json` or inspect `/docs`
 3. integrate YAML list/create/update/read/delete if you need editable config files
 4. integrate session upload/download if you need Mol* session persistence
-5. integrate trajectory registration and frame access if you need streaming support
+5. integrate topology registration if you need modular structure-file storage
+6. integrate trajectory registration and frame access if you need streaming support
 
 ## Related docs
 

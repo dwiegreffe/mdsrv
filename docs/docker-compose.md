@@ -1,8 +1,10 @@
-# Docker Compose Setup for Remote Session + YAML API
+# Docker Compose Setup for Modular Session, Trajectory, Topology + YAML APIs
 
-This setup runs three separate containers:
+This setup runs five separate containers:
 
 - `mdsrv-remote-session` behind a reverse proxy
+- `mdsrv-trajectory-registry` behind a reverse proxy
+- `mdsrv-topology-registry` behind a reverse proxy
 - `mdsrv-yml-server` behind a reverse proxy
 - `mdsrv-proxy` as the single external entry point
 
@@ -10,23 +12,28 @@ For external app developers, the recommended handoff document is [api-usage-guid
 
 It uses one shared Compose file and one shared multi-stage app Dockerfile on both ARM64 and AMD64.
 
-Both services are reachable through the same host IP address and the same external port from outside Docker:
+All services are reachable through the same host IP address and the same external port from outside Docker:
 
 - `<host-ip>:1337/docs` for unified API docs
 - `<host-ip>:1337/api/v1/session...` for session endpoints
 - `<host-ip>:1337/api/v1/trajectory...` for trajectory endpoints
+- `<host-ip>:1337/api/v1/topology...` for topology endpoints
 - `<host-ip>:1337/api/v1/yaml...` for the YAML API
 
-The storage is intentionally split into two host directories so the data stays separated.
+The storage is intentionally split into four host directories so the data stays separated.
 
 ## Host data directories
 
 - `docker/data/remote-session/`
+- `docker/data/trajectory-registry/`
+- `docker/data/topology-registry/`
 - `docker/data/yml/`
 
 The containers mount them like this:
 
 - `docker/data/remote-session/ -> /mdsrv/remote-session`
+- `docker/data/trajectory-registry/ -> /mdsrv/trajectory-registry`
+- `docker/data/topology-registry/ -> /mdsrv/topology-registry`
 - `docker/data/yml/ -> /mdsrv/yml-server`
 
 ## Start services
@@ -63,13 +70,37 @@ Available at:
 
 - `http://127.0.0.1:1337/api/v1/session`
 
-This is the existing remote-session server for sessions and trajectory streaming.
+This is the existing remote-session server for sessions.
 
 Its files are stored in:
 
 - `docker/data/remote-session/`
 
-### 2. YAML file API
+### 2. Trajectory registry / XTC streaming
+
+Available at:
+
+- `http://127.0.0.1:1337/api/v1/trajectory`
+
+This runs the standalone trajectory registry and XTC frame streaming service.
+
+Its files are stored in:
+
+- `docker/data/trajectory-registry/`
+
+### 3. Topology registry
+
+Available at:
+
+- `http://127.0.0.1:1337/api/v1/topology`
+
+This runs the standalone topology registry service.
+
+Its files are stored in:
+
+- `docker/data/topology-registry/`
+
+### 4. YAML file API
 
 Available at:
 
@@ -101,6 +132,35 @@ Build the YAML server runtime image:
 
 ```bash
 docker build --target yml-server-runtime -f docker/server/Dockerfile -t mdsrv-yml-server .
+```
+
+Build the trajectory registry runtime image:
+
+```bash
+docker build --target trajectory-registry-runtime -f docker/server/Dockerfile -t mdsrv-trajectory-registry .
+```
+
+Build the topology registry runtime image:
+
+```bash
+docker build --target topology-registry-runtime -f docker/server/Dockerfile -t mdsrv-topology-registry .
+```
+
+## Proxy routing overrides
+
+The nginx proxy config is now rendered from environment variables at container startup.
+
+Default upstreams:
+
+- `MDSRV_SESSION_UPSTREAM=mdsrv-remote-session:1337`
+- `MDSRV_TRAJECTORY_UPSTREAM=mdsrv-trajectory-registry:1341`
+- `MDSRV_TOPOLOGY_UPSTREAM=mdsrv-topology-registry:1342`
+- `MDSRV_YAML_UPSTREAM=mdsrv-yml-server:1340`
+
+Example override to keep `/api/v1/trajectory` on the legacy remote-session service while testing:
+
+```bash
+MDSRV_TRAJECTORY_UPSTREAM=mdsrv-remote-session:1337 docker compose up --build
 ```
 
 ## Test the YAML API

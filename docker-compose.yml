@@ -3,11 +3,19 @@ services:
     image: nginx:alpine
     depends_on:
       - mdsrv-remote-session
+      - mdsrv-trajectory-registry
+      - mdsrv-topology-registry
       - mdsrv-yml-server
     ports:
       - '1337:1337'
+    environment:
+      NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx
+      MDSRV_SESSION_UPSTREAM: ${MDSRV_SESSION_UPSTREAM:-mdsrv-remote-session:1337}
+      MDSRV_TRAJECTORY_UPSTREAM: ${MDSRV_TRAJECTORY_UPSTREAM:-mdsrv-trajectory-registry:1341}
+      MDSRV_TOPOLOGY_UPSTREAM: ${MDSRV_TOPOLOGY_UPSTREAM:-mdsrv-topology-registry:1342}
+      MDSRV_YAML_UPSTREAM: ${MDSRV_YAML_UPSTREAM:-mdsrv-yml-server:1340}
     volumes:
-      - ./docker/proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/proxy/nginx.conf.template:/etc/nginx/templates/nginx.conf.template:ro
       - ./docker/proxy/public:/usr/share/nginx/html:ro
 
   mdsrv-remote-session:
@@ -25,3 +33,19 @@ services:
       target: yml-server-runtime
     volumes:
       - ./docker/data/yml:/mdsrv/yml-server
+
+  mdsrv-trajectory-registry:
+    build:
+      context: .
+      dockerfile: docker/server/Dockerfile
+      target: trajectory-registry-runtime
+    volumes:
+      - ./docker/data/trajectory-registry:/mdsrv/trajectory-registry
+
+  mdsrv-topology-registry:
+    build:
+      context: .
+      dockerfile: docker/server/Dockerfile
+      target: topology-registry-runtime
+    volumes:
+      - ./docker/data/topology-registry:/mdsrv/topology-registry
