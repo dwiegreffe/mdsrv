@@ -70,6 +70,11 @@ Both services are reachable through the same host IP and the same external port 
 - `<host-ip>:1337/api/v1/topology` for topology endpoints
 - `<host-ip>:1337/api/v1/yaml` for the YAML API
 
+Direct file uploads are supported for the modular registries:
+
+- `PUT /api/v1/topology/:id` for raw `.pdb` uploads
+- `PUT /api/v1/trajectory/:id` for raw `.xtc` uploads
+
 #### Build minimized runtime images directly
 
 Build the remote-session runtime image:

@@ -156,11 +156,28 @@ Default upstreams:
 - `MDSRV_TRAJECTORY_UPSTREAM=mdsrv-trajectory-registry:1341`
 - `MDSRV_TOPOLOGY_UPSTREAM=mdsrv-topology-registry:1342`
 - `MDSRV_YAML_UPSTREAM=mdsrv-yml-server:1340`
+- `MDSRV_CLIENT_MAX_BODY_SIZE=11g`
+
+Default upload limits in the Docker setup:
+
+- `MDSRV_TOPOLOGY_UPLOAD_LIMIT=1gb`
+- `MDSRV_TRAJECTORY_UPLOAD_LIMIT=10gb`
+
+Code defaults outside Docker are smaller:
+
+- topology registry: `256mb`
+- trajectory registry: `1gb`
 
 Example override to keep `/api/v1/trajectory` on the legacy remote-session service while testing:
 
 ```bash
 MDSRV_TRAJECTORY_UPSTREAM=mdsrv-remote-session:1337 docker compose up --build
+```
+
+Example override to reduce upload limits temporarily:
+
+```bash
+MDSRV_TOPOLOGY_UPLOAD_LIMIT=128mb MDSRV_TRAJECTORY_UPLOAD_LIMIT=2gb docker compose up --build
 ```
 
 ## Test the YAML API

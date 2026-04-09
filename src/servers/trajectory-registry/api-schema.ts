@@ -54,6 +54,40 @@ export function getSchema(config: Config) {
                 }
             },
             [mapPath('api/v1/trajectory/{id}')]: {
+                get: {
+                    tags: ['Trajectory'],
+                    summary: 'Returns the stored XTC file content for the given trajectory id.',
+                    operationId: 'getTrajectory',
+                    parameters: [{ name: 'id', in: 'path', description: 'Trajectory id.', required: true, schema: { type: 'string' }, style: 'simple' }],
+                    responses: {
+                        200: { description: 'The XTC file content.', content: { 'application/octet-stream': {} } },
+                        404: { description: 'Trajectory not found.', content: { 'application/json': {} } }
+                    }
+                },
+                put: {
+                    tags: ['Trajectory'],
+                    summary: 'Uploads an XTC file directly and stores it under the given trajectory id.',
+                    operationId: 'uploadTrajectory',
+                    parameters: [
+                        { name: 'id', in: 'path', description: 'Trajectory id.', required: true, schema: { type: 'string' }, style: 'simple' },
+                        { name: 'name', in: 'query', description: 'Display name.', required: false, schema: { type: 'string' } },
+                        { name: 'description', in: 'query', description: 'Description.', required: false, schema: { type: 'string' } },
+                        { name: 'source', in: 'query', description: 'Source label.', required: false, schema: { type: 'string' } },
+                        { name: 'fileName', in: 'query', description: 'Stored file name. Must end with .xtc.', required: false, schema: { type: 'string' } }
+                    ],
+                    requestBody: {
+                        required: true,
+                        content: {
+                            'application/octet-stream': { schema: { type: 'string', format: 'binary' } }
+                        }
+                    },
+                    responses: {
+                        201: { description: 'Trajectory uploaded.', content: { 'application/json': {} } },
+                        400: { description: 'Invalid request.', content: { 'application/json': {} } },
+                        409: { description: 'Trajectory id or file name already exists.', content: { 'application/json': {} } },
+                        413: { description: 'Upload exceeds configured limit.', content: { 'application/json': {} } }
+                    }
+                },
                 delete: {
                     tags: ['Trajectory'],
                     summary: 'Removes the trajectory with the given id.',

@@ -10,6 +10,7 @@ services:
       - '1337:1337'
     environment:
       NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx
+      MDSRV_CLIENT_MAX_BODY_SIZE: ${MDSRV_CLIENT_MAX_BODY_SIZE:-11g}
       MDSRV_SESSION_UPSTREAM: ${MDSRV_SESSION_UPSTREAM:-mdsrv-remote-session:1337}
       MDSRV_TRAJECTORY_UPSTREAM: ${MDSRV_TRAJECTORY_UPSTREAM:-mdsrv-trajectory-registry:1341}
       MDSRV_TOPOLOGY_UPSTREAM: ${MDSRV_TOPOLOGY_UPSTREAM:-mdsrv-topology-registry:1342}
@@ -39,6 +40,8 @@ services:
       context: .
       dockerfile: docker/server/Dockerfile
       target: trajectory-registry-runtime
+    environment:
+      MDSRV_TRAJECTORY_UPLOAD_LIMIT: ${MDSRV_TRAJECTORY_UPLOAD_LIMIT:-10gb}
     volumes:
       - ./docker/data/trajectory-registry:/mdsrv/trajectory-registry
 
@@ -47,5 +50,7 @@ services:
       context: .
       dockerfile: docker/server/Dockerfile
       target: topology-registry-runtime
+    environment:
+      MDSRV_TOPOLOGY_UPLOAD_LIMIT: ${MDSRV_TOPOLOGY_UPLOAD_LIMIT:-1gb}
     volumes:
       - ./docker/data/topology-registry:/mdsrv/topology-registry

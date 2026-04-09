@@ -3,7 +3,7 @@ events {}
 http {
     server {
         listen 1337;
-        client_max_body_size 20m;
+        client_max_body_size ${MDSRV_CLIENT_MAX_BODY_SIZE};
 
         location = / {
             return 302 /docs/;

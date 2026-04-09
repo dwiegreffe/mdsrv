@@ -4,6 +4,7 @@ export interface Config {
     working_folder: string,
     port?: string | number,
     api_prefix: string,
+    upload_limit?: string,
 }
 
 export function getConfig() {
@@ -11,8 +12,10 @@ export function getConfig() {
     cmdParser.add_argument('--working-folder', { help: 'Working folder path.', required: true });
     cmdParser.add_argument('--port', { help: 'Server port. Alternatively use ENV variable PORT.', type: 'int', required: false });
     cmdParser.add_argument('--api-prefix', { help: 'Server API prefix.', default: '', required: false });
+    cmdParser.add_argument('--upload-limit', { help: 'Maximum direct upload payload size.', required: false });
 
     const config = cmdParser.parse_args() as Config;
     if (!config.port) config.port = process.env.port || 1341;
+    if (!config.upload_limit) config.upload_limit = process.env.MDSRV_TRAJECTORY_UPLOAD_LIMIT || '1gb';
     return config;
 }

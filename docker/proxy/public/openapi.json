@@ -89,6 +89,37 @@
       }
     },
     "/api/v1/trajectory/{id}": {
+      "get": {
+        "tags": ["Trajectory"],
+        "summary": "Read a stored XTC trajectory file",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "XTC content", "content": { "application/octet-stream": {} } } }
+      },
+      "put": {
+        "tags": ["Trajectory"],
+        "summary": "Upload an XTC trajectory directly",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "name", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "description", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "source", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "fileName", "in": "query", "required": false, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": { "schema": { "type": "string", "format": "binary" } }
+          }
+        },
+        "responses": {
+          "201": { "description": "Created" },
+          "400": { "description": "Invalid request" },
+          "409": { "description": "Id or file already exists" },
+          "413": { "description": "Upload exceeds configured limit" }
+        }
+      },
       "delete": {
         "tags": ["Trajectory"],
         "summary": "Delete a stored trajectory",
@@ -156,6 +187,30 @@
       }
     },
     "/api/v1/topology/{id}": {
+      "put": {
+        "tags": ["Topology"],
+        "summary": "Upload a PDB topology directly",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "name", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "description", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "source", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "fileName", "in": "query", "required": false, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "chemical/x-pdb": { "schema": { "type": "string" } },
+            "text/plain": { "schema": { "type": "string" } }
+          }
+        },
+        "responses": {
+          "201": { "description": "Created" },
+          "400": { "description": "Invalid request" },
+          "409": { "description": "Id or file already exists" },
+          "413": { "description": "Upload exceeds configured limit" }
+        }
+      },
       "get": {
         "tags": ["Topology"],
         "summary": "Read a stored PDB topology file",

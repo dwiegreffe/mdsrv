@@ -5,7 +5,7 @@ import * as bodyParser from 'body-parser';
 import fetch from 'node-fetch';
 import { swaggerUiAssetsHandler, swaggerUiIndexHandler } from '../common/swagger-ui';
 import { getConfig } from './config';
-import { createTrajectoryEntry, ensureTrajectoryDataDirectory, getTrajectoryEntry, getTrajectoryFilePath, listTrajectoryEntries, normalizeTrajectoryId, normalizeXtcFileName, removeTrajectoryEntry } from './storage';
+import { createTrajectoryEntry, ensureTrajectoryDataDirectory, getTrajectoryEntry, getTrajectoryFilePath, listTrajectoryEntries, normalizeTrajectoryId, normalizeXtcFileName, readTrajectoryFile, removeTrajectoryEntry } from './storage';
 import { getFrameData, getFrameStarts } from './xtc';
 import { getSchema, shortcutIconLink } from './api-schema';
 
@@ -14,8 +14,9 @@ const ApiRoot = '/api/v1/trajectory';
 
 const app = express();
 app.use(compression(<any>{ level: 6, memLevel: 9, chunkSize: 16 * 16384, filter: () => true }));
-app.use(cors({ methods: ['GET', 'POST', 'DELETE'] }));
+app.use(cors({ methods: ['GET', 'POST', 'PUT', 'DELETE'] }));
 app.use(bodyParser.json({ limit: '1mb' }));
+app.use(bodyParser.raw({ type: ['application/octet-stream'], limit: Config.upload_limit }));
 
 function mapPath(path: string) {
     if (!Config.api_prefix) return path;
@@ -26,6 +27,11 @@ function writeError(res: express.Response, status: number, message: string, code
     res.status(status);
     res.json({ errors: [{ code: code || 'request', message }] });
 }
+
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (err?.type === 'entity.too.large') return writeError(res, 413, `Upload exceeds configured limit '${Config.upload_limit}'.`, 'upload-limit');
+    next(err);
+});
 
 app.get(mapPath(ApiRoot), (req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -59,6 +65,51 @@ app.post(mapPath(ApiRoot), async (req, res) => {
         res.json(entry);
     } catch (e) {
         const message = e instanceof Error ? e.message : 'Failed to create trajectory entry.';
+        const status = /already exists/i.test(message) ? 409 : 500;
+        writeError(res, status, message, status === 409 ? 'unique-trajectory' : 'create-trajectory');
+    }
+});
+
+app.get(mapPath(`${ApiRoot}/:id`), (req, res) => {
+    let id: string;
+    try {
+        id = normalizeTrajectoryId(req.params.id || '');
+    } catch (e) {
+        return writeError(res, 400, e instanceof Error ? e.message : 'Invalid trajectory id.', 'valid-id');
+    }
+    const entry = getTrajectoryEntry(Config, id);
+    if (!entry) return writeError(res, 404, `Trajectory '${id}' does not exist.`, 'missing-trajectory');
+    const content = readTrajectoryFile(Config, id);
+    if (content === void 0) return writeError(res, 404, `Trajectory '${id}' does not exist.`, 'missing-trajectory');
+    res.writeHead(200, { 'Content-Type': 'application/octet-stream' });
+    res.end(content);
+});
+
+app.put(mapPath(`${ApiRoot}/:id`), (req, res) => {
+    let id: string;
+    let fileName: string;
+    try {
+        id = normalizeTrajectoryId(req.params.id || '');
+        fileName = normalizeXtcFileName((req.query.fileName as string | undefined) || `${id}.xtc`);
+    } catch (e) {
+        return writeError(res, 400, e instanceof Error ? e.message : 'Invalid trajectory upload.', 'valid-trajectory');
+    }
+
+    if (!Buffer.isBuffer(req.body) || req.body.length === 0) return writeError(res, 400, 'Request body must contain XTC binary data.', 'request-body');
+
+    try {
+        const entry = createTrajectoryEntry(Config, {
+            id,
+            fileName,
+            name: (req.query.name as string | undefined) || id,
+            description: (req.query.description as string | undefined) || '',
+            source: (req.query.source as string | undefined) || 'direct-upload',
+            format: 'xtc'
+        }, req.body);
+        res.status(201);
+        res.json(entry);
+    } catch (e) {
+        const message = e instanceof Error ? e.message : 'Failed to store trajectory upload.';
         const status = /already exists/i.test(message) ? 409 : 500;
         writeError(res, status, message, status === 409 ? 'unique-trajectory' : 'create-trajectory');
     }

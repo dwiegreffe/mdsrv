@@ -70,6 +70,12 @@ export function getTrajectoryEntry(config: Config, id: string) {
     return readTrajectoryIndex(config).find(entry => entry.id === normalized);
 }
 
+export function readTrajectoryFile(config: Config, id: string) {
+    const entry = getTrajectoryEntry(config, id);
+    if (!entry) return void 0;
+    return fs.readFileSync(getTrajectoryFilePath(config, entry.fileName));
+}
+
 export function createTrajectoryEntry(config: Config, entry: Omit<TrajectoryEntry, 'timestamp'>, content: Buffer) {
     const index = readTrajectoryIndex(config);
     if (index.some(existing => existing.id === entry.id)) throw new Error(`Trajectory '${entry.id}' already exists.`);

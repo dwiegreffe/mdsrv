@@ -59,6 +59,31 @@ export function getSchema(config: Config) {
                 }
             },
             [mapPath('api/v1/topology/{id}')]: {
+                put: {
+                    tags: ['Topology'],
+                    summary: 'Uploads a PDB file directly and stores it under the given topology id.',
+                    operationId: 'uploadTopology',
+                    parameters: [
+                        { name: 'id', in: 'path', description: 'Topology id.', required: true, schema: { type: 'string' }, style: 'simple' },
+                        { name: 'name', in: 'query', description: 'Display name.', required: false, schema: { type: 'string' } },
+                        { name: 'description', in: 'query', description: 'Description.', required: false, schema: { type: 'string' } },
+                        { name: 'source', in: 'query', description: 'Source label.', required: false, schema: { type: 'string' } },
+                        { name: 'fileName', in: 'query', description: 'Stored file name. Must end with .pdb.', required: false, schema: { type: 'string' } }
+                    ],
+                    requestBody: {
+                        required: true,
+                        content: {
+                            'chemical/x-pdb': { schema: { type: 'string' } },
+                            'text/plain': { schema: { type: 'string' } }
+                        }
+                    },
+                    responses: {
+                        201: { description: 'Topology uploaded.', content: { 'application/json': {} } },
+                        400: { description: 'Invalid request.', content: { 'application/json': {} } },
+                        409: { description: 'Topology id or file name already exists.', content: { 'application/json': {} } },
+                        413: { description: 'Upload exceeds configured limit.', content: { 'application/json': {} } }
+                    }
+                },
                 get: {
                     tags: ['Topology'],
                     summary: 'Returns the stored PDB file content for the given topology id.',

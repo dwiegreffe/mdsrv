@@ -48,6 +48,8 @@ Endpoints:
 
 - `GET /api/v1/trajectory`
 - `POST /api/v1/trajectory`
+- `PUT /api/v1/trajectory/:id`
+- `GET /api/v1/trajectory/:id`
 - `DELETE /api/v1/trajectory/:id`
 - `GET /api/v1/trajectory/:id/starts`
 - `GET /api/v1/trajectory/:id/frame/offset/:start/:end`
@@ -60,6 +62,7 @@ Endpoints:
 
 - `GET /api/v1/topology`
 - `POST /api/v1/topology`
+- `PUT /api/v1/topology/:id`
 - `GET /api/v1/topology/:id`
 - `DELETE /api/v1/topology/:id`
 
@@ -191,6 +194,20 @@ curl -i -X POST "http://127.0.0.1:1337/api/v1/trajectory" \
   }'
 ```
 
+## Upload a trajectory directly from local file bytes
+
+```bash
+curl -i -X PUT "http://127.0.0.1:1337/api/v1/trajectory/traj-001?name=traj-001&fileName=traj-001.xtc&source=frontend-upload" \
+  -H "Content-Type: application/octet-stream" \
+  --data-binary @traj-001.xtc
+```
+
+## Read a stored trajectory file
+
+```bash
+curl -OJ "http://127.0.0.1:1337/api/v1/trajectory/traj-001"
+```
+
 ## Get trajectory frame starts
 
 ```bash
@@ -230,6 +247,14 @@ curl -i -X POST "http://127.0.0.1:1337/api/v1/topology" \
     "description": "Example topology",
     "source": "RCSB"
   }'
+```
+
+## Upload a topology directly from local file bytes
+
+```bash
+curl -i -X PUT "http://127.0.0.1:1337/api/v1/topology/1cbs?name=1CBS&fileName=1cbs.pdb&source=frontend-upload" \
+  -H "Content-Type: chemical/x-pdb" \
+  --data-binary @1cbs.pdb
 ```
 
 ## Read a topology
