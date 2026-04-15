@@ -1,17 +1,9 @@
 [
   {
-    "timestamp": 1774963197612,
-    "id": "9314fd24-6ac4-4091-a85a-4998461fd001",
-    "name": "test__trajectory-l1uc-wt-prot-pdb-l1uc-wt-prot-xtc",
-    "description": "l1uc-wt.prot.pdb",
-    "source": "",
-    "version": "molstar-max"
-  },
-  {
-    "timestamp": 1775055002387,
-    "id": "64732933-cd17-4e09-9aee-91a93b74df6b",
-    "name": "test-base__trajectory-l1uc-wt-prot-pdb-l1uc-wt-pro",
-    "description": "l1uc-wt.prot.pdb",
+    "timestamp": 1776265726801,
+    "id": "259c1599-bed0-47d8-9fd5-93e26cdde3c3",
+    "name": "test-session",
+    "description": "",
     "source": "",
     "version": "molstar-max"
   }
