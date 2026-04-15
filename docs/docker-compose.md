@@ -187,7 +187,7 @@ Create a file:
 ```bash
 curl -i -X PUT "http://127.0.0.1:1337/api/v1/yaml/test.yml" \
   -H "Content-Type: text/yaml" \
-  --data-binary $'name: test\nversion: 1\n'
+  --data-binary $'schemaVersion: 1\nname: test\n'
 ```
 
 List files:
@@ -207,7 +207,7 @@ Update file:
 ```bash
 curl -i -X POST "http://127.0.0.1:1337/api/v1/yaml/test.yml" \
   -H "Content-Type: text/yaml" \
-  --data-binary $'name: test\nversion: 2\n'
+  --data-binary $'schemaVersion: 2\nname: test\n'
 ```
 
 Rename file:
@@ -232,11 +232,10 @@ Current example rules:
 
 ```json
 {
-  "forbiddenWords": ["password", "secret"],
-  "forbiddenKeys": ["debug", "internal"],
-  "requiredKeys": ["name", "version"],
-  "maxFileSizeBytes": 65536
+  "requiredKeys": ["schemaVersion"]
 }
 ```
+
+In the default Docker setup, YAML files are expected to define `schemaVersion` at the top level.
 
 If you want custom rules later, the compose file can be changed to mount your own JSON file and pass its path via `--yml-rules`.

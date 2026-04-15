@@ -113,7 +113,7 @@ If the file already exists, the server returns `409 Conflict`.
 ```bash
 curl -i -X PUT "http://127.0.0.1:1337/api/v1/yaml/config.yml" \
   -H "Content-Type: text/yaml" \
-  --data-binary $'name: config\nversion: 1\n'
+  --data-binary $'schemaVersion: 1\nname: config\n'
 ```
 
 ## Update an existing YAML file
@@ -124,7 +124,7 @@ If the file does not exist, the server returns `404 Not Found`.
 ```bash
 curl -i -X POST "http://127.0.0.1:1337/api/v1/yaml/config.yml" \
   -H "Content-Type: text/yaml" \
-  --data-binary $'name: config\nversion: 2\n'
+  --data-binary $'schemaVersion: 2\nname: config\n'
 ```
 
 ## Read a YAML file
@@ -276,9 +276,6 @@ The YAML API enforces file-level validation rules defined by the server host.
 Typical rules include:
 
 - required keys
-- forbidden keys
-- forbidden words
-- maximum file size
 - valid YAML syntax
 - valid file names
 
@@ -286,12 +283,11 @@ Example rule config:
 
 ```json
 {
-  "forbiddenWords": ["password", "secret"],
-  "forbiddenKeys": ["debug", "internal"],
-  "requiredKeys": ["name", "version"],
-  "maxFileSizeBytes": 65536
+  "requiredKeys": ["schemaVersion"]
 }
 ```
+
+In the default Docker setup, `schemaVersion` is the only documented YAML content requirement and it must be defined at the top level.
 
 ### File naming rules
 
