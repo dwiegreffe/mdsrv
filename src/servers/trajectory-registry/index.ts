@@ -6,7 +6,7 @@ import fetch from 'node-fetch';
 import { swaggerUiAssetsHandler, swaggerUiIndexHandler } from '../common/swagger-ui';
 import { getConfig } from './config';
 import { createTrajectoryEntry, ensureTrajectoryDataDirectory, getTrajectoryEntry, getTrajectoryFilePath, listTrajectoryEntries, normalizeTrajectoryId, normalizeXtcFileName, readTrajectoryFile, removeTrajectoryEntry } from './storage';
-import { getFrameData, getFrameStarts } from './xtc';
+import { getFrameRangeData, getFrameStarts, getSingleFrameData } from './xtc';
 import { getSchema, shortcutIconLink } from './api-schema';
 
 const Config = getConfig();
@@ -26,6 +26,54 @@ function mapPath(path: string) {
 function writeError(res: express.Response, status: number, message: string, code?: string) {
     res.status(status);
     res.json({ errors: [{ code: code || 'request', message }] });
+}
+
+function parseTrajectoryId(rawId: string, res: express.Response) {
+    try {
+        return normalizeTrajectoryId(rawId || '');
+    } catch (e) {
+        writeError(res, 400, e instanceof Error ? e.message : 'Invalid trajectory id.', 'valid-id');
+        return void 0;
+    }
+}
+
+function parseFramePosition(value: string, field: 'start' | 'end', res: express.Response) {
+    if (field === 'end' && value === 'Infinity') return Infinity;
+    const parsed = parseInt(value || '-1', 10);
+    if (Number.isNaN(parsed) || parsed < 0) {
+        writeError(res, 400, `Invalid frame ${field} offset.`, 'valid-frame-range');
+        return void 0;
+    }
+    return parsed;
+}
+
+async function resolveTrajectoryFilePath(id: string, res: express.Response) {
+    const entry = getTrajectoryEntry(Config, id);
+    if (!entry) {
+        writeError(res, 404, `Trajectory '${id}' does not exist.`, 'missing-trajectory');
+        return void 0;
+    }
+    return getTrajectoryFilePath(Config, entry.fileName);
+}
+
+async function sendSingleFrame(filePath: string, start: number, end: number, res: express.Response) {
+    if (end !== Infinity && end <= start) return writeError(res, 400, 'Frame end offset must be greater than frame start offset.', 'valid-frame-range');
+    try {
+        const file = await getSingleFrameData(filePath, start, end);
+        res.json(file);
+    } catch {
+        return writeError(res, 404, `Frame '${start}:${end}' could not be read.`, 'missing-frame');
+    }
+}
+
+async function sendFrameRange(filePath: string, start: number, end: number, res: express.Response) {
+    if (end !== Infinity && end <= start) return writeError(res, 400, 'Frame range end offset must be greater than frame range start offset.', 'valid-frame-range');
+    try {
+        const file = await getFrameRangeData(filePath, start, end);
+        res.json(file);
+    } catch {
+        return writeError(res, 404, `Frame range '${start}:${end}' could not be read.`, 'missing-frame');
+    }
 }
 
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -128,49 +176,60 @@ app.delete(mapPath(`${ApiRoot}/:id`), (req, res) => {
 });
 
 app.get(mapPath(`${ApiRoot}/:id/starts`), async (req, res) => {
-    let id: string;
+    const id = parseTrajectoryId(req.params.id || '', res);
+    if (!id) return;
+    const filePath = await resolveTrajectoryFilePath(id, res);
+    if (!filePath) return;
     try {
-        id = normalizeTrajectoryId(req.params.id || '');
-    } catch (e) {
-        return writeError(res, 400, e instanceof Error ? e.message : 'Invalid trajectory id.', 'valid-id');
-    }
-    const entry = getTrajectoryEntry(Config, id);
-    if (!entry) return writeError(res, 404, `Trajectory '${id}' does not exist.`, 'missing-trajectory');
-    try {
-        const starts = await getFrameStarts(getTrajectoryFilePath(Config, entry.fileName));
+        const starts = await getFrameStarts(filePath);
         res.write(`${starts}`);
         res.end();
-    } catch (e) {
+    } catch {
         return writeError(res, 404, `Trajectory '${id}' could not be streamed.`, 'stream-trajectory');
     }
 });
 
 app.get(mapPath(`${ApiRoot}/:id/frame/offset/:start/:end`), async (req, res) => {
-    let id: string;
-    try {
-        id = normalizeTrajectoryId(req.params.id || '');
-    } catch (e) {
-        return writeError(res, 400, e instanceof Error ? e.message : 'Invalid trajectory id.', 'valid-id');
-    }
-    const entry = getTrajectoryEntry(Config, id);
-    if (!entry) return writeError(res, 404, `Trajectory '${id}' does not exist.`, 'missing-trajectory');
+    const id = parseTrajectoryId(req.params.id || '', res);
+    if (!id) return;
+    const filePath = await resolveTrajectoryFilePath(id, res);
+    if (!filePath) return;
+    const start = parseFramePosition(req.params.start || '', 'start', res);
+    if (start === void 0) return;
+    const end = parseFramePosition(req.params.end || '', 'end', res);
+    if (end === void 0) return;
+    return sendSingleFrame(filePath, start, end, res);
+});
 
-    let start: number;
-    let end: number;
-    try {
-        start = parseInt(req.params.start || '-1', 10);
-        end = req.params.end === 'Infinity' ? Infinity : parseInt(req.params.end || '-1', 10);
-    } catch {
-        return writeError(res, 400, 'Invalid frame range.', 'valid-frame-range');
-    }
-    if (Number.isNaN(start) || Number.isNaN(end)) return writeError(res, 400, 'Invalid frame range.', 'valid-frame-range');
+app.get(mapPath(`${ApiRoot}/:id/frame/start/:start`), async (req, res) => {
+    const id = parseTrajectoryId(req.params.id || '', res);
+    if (!id) return;
+    const filePath = await resolveTrajectoryFilePath(id, res);
+    if (!filePath) return;
+    const start = parseFramePosition(req.params.start || '', 'start', res);
+    if (start === void 0) return;
 
     try {
-        const file = await getFrameData(getTrajectoryFilePath(Config, entry.fileName), start, end);
-        res.json(file);
+        const starts = await getFrameStarts(filePath);
+        const index = starts.indexOf(start);
+        if (index < 0) return writeError(res, 404, `Frame start '${start}' does not exist.`, 'missing-frame');
+        const end = index === starts.length - 1 ? Infinity : starts[index + 1];
+        return sendSingleFrame(filePath, start, end, res);
     } catch {
-        return writeError(res, 404, `Frame range '${start}:${end}' could not be read.`, 'missing-frame');
+        return writeError(res, 404, `Trajectory '${id}' could not be streamed.`, 'stream-trajectory');
     }
+});
+
+app.get(mapPath(`${ApiRoot}/:id/frame-range/offset/:start/:end`), async (req, res) => {
+    const id = parseTrajectoryId(req.params.id || '', res);
+    if (!id) return;
+    const filePath = await resolveTrajectoryFilePath(id, res);
+    if (!filePath) return;
+    const start = parseFramePosition(req.params.start || '', 'start', res);
+    if (start === void 0) return;
+    const end = parseFramePosition(req.params.end || '', 'end', res);
+    if (end === void 0) return;
+    return sendFrameRange(filePath, start, end, res);
 });
 
 const schema = getSchema(Config);

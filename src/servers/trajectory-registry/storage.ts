@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { makeDir } from '../../mol-util/make-dir';
 import { Config } from './config';
+import { getFrameStartsIndexPath } from './xtc';
 
 export type TrajectoryEntry = {
     timestamp: number,
@@ -94,7 +95,10 @@ export function removeTrajectoryEntry(config: Config, id: string) {
     if (!entry) return false;
     writeTrajectoryIndex(config, index.filter(existing => existing.id !== normalized));
     try {
-        fs.unlinkSync(getTrajectoryFilePath(config, entry.fileName));
+        const filePath = getTrajectoryFilePath(config, entry.fileName);
+        fs.unlinkSync(filePath);
+        const startsPath = getFrameStartsIndexPath(filePath);
+        if (fs.existsSync(startsPath)) fs.unlinkSync(startsPath);
     } catch { }
     return true;
 }

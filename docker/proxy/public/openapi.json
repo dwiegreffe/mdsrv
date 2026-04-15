@@ -142,13 +142,36 @@
     "/api/v1/trajectory/{id}/frame/offset/{start}/{end}": {
       "get": {
         "tags": ["Trajectory"],
-        "summary": "Get one trajectory frame by offset range",
+        "summary": "Get exactly one trajectory frame by start offset and exclusive end boundary",
         "parameters": [
           { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
           { "name": "start", "in": "path", "required": true, "schema": { "type": "string" } },
           { "name": "end", "in": "path", "required": true, "schema": { "type": "string" } }
         ],
-        "responses": { "200": { "description": "Frame payload", "content": { "application/json": {} } } }
+        "responses": { "200": { "description": "Single-frame payload", "content": { "application/json": {} } } }
+      }
+    },
+    "/api/v1/trajectory/{id}/frame/start/{start}": {
+      "get": {
+        "tags": ["Trajectory"],
+        "summary": "Get exactly one trajectory frame by frame start offset",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "start", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Single-frame payload", "content": { "application/json": {} } } }
+      }
+    },
+    "/api/v1/trajectory/{id}/frame-range/offset/{start}/{end}": {
+      "get": {
+        "tags": ["Trajectory"],
+        "summary": "Get all complete trajectory frames in an exclusive byte range",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "start", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "end", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Multi-frame payload", "content": { "application/json": {} } } }
       }
     },
     "/api/v1/topology": {

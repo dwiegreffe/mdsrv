@@ -42,7 +42,7 @@ Endpoints:
 
 ### 2. Trajectory API
 
-Use this API to list trajectories, register a trajectory by remote URL, access frame offsets, stream individual frames, and delete trajectories.
+Use this API to list trajectories, register a trajectory by remote URL, access cached frame offsets, stream individual frames, stream frame ranges, and delete trajectories.
 
 Endpoints:
 
@@ -53,6 +53,8 @@ Endpoints:
 - `DELETE /api/v1/trajectory/:id`
 - `GET /api/v1/trajectory/:id/starts`
 - `GET /api/v1/trajectory/:id/frame/offset/:start/:end`
+- `GET /api/v1/trajectory/:id/frame/start/:start`
+- `GET /api/v1/trajectory/:id/frame-range/offset/:start/:end`
 
 ### 3. Topology API
 
@@ -216,8 +218,26 @@ curl "http://127.0.0.1:1337/api/v1/trajectory/traj-001/starts"
 
 ## Get one trajectory frame by offset range
 
+`end` is an exclusive upper bound. In typical Mol* usage it is the next frame start or `Infinity`.
+
 ```bash
 curl "http://127.0.0.1:1337/api/v1/trajectory/traj-001/frame/offset/0/1024"
+```
+
+## Get one trajectory frame by start offset
+
+The server resolves the next frame boundary from the cached starts index.
+
+```bash
+curl "http://127.0.0.1:1337/api/v1/trajectory/traj-001/frame/start/0"
+```
+
+## Get a trajectory frame range by byte range
+
+`end` is an exclusive upper bound and the response may contain multiple frames.
+
+```bash
+curl "http://127.0.0.1:1337/api/v1/trajectory/traj-001/frame-range/offset/0/4096"
 ```
 
 ## Delete a trajectory

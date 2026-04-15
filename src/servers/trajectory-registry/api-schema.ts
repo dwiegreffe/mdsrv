@@ -114,15 +114,46 @@ export function getSchema(config: Config) {
             [mapPath('api/v1/trajectory/{id}/frame/offset/{start}/{end}')]: {
                 get: {
                     tags: ['Trajectory'],
-                    summary: 'Returns an XTC frame payload for a single frame offset range.',
+                    summary: 'Returns exactly one XTC frame using a start offset and exclusive end boundary.',
                     operationId: 'getTrajectoryFrame',
                     parameters: [
                         { name: 'id', in: 'path', description: 'Trajectory id.', required: true, schema: { type: 'string' }, style: 'simple' },
                         { name: 'start', in: 'path', description: 'Frame start offset.', required: true, schema: { type: 'string' }, style: 'simple' },
-                        { name: 'end', in: 'path', description: 'Frame end offset or Infinity.', required: true, schema: { type: 'string' }, style: 'simple' }
+                        { name: 'end', in: 'path', description: 'Exclusive upper bound for the frame read, typically the next frame start or Infinity.', required: true, schema: { type: 'string' }, style: 'simple' }
                     ],
                     responses: {
-                        200: { description: 'Frame payload.', content: { 'application/json': {} } },
+                        200: { description: 'Single-frame payload.', content: { 'application/json': {} } },
+                        404: { description: 'Trajectory or frame not found.', content: { 'application/json': {} } }
+                    }
+                }
+            },
+            [mapPath('api/v1/trajectory/{id}/frame/start/{start}')]: {
+                get: {
+                    tags: ['Trajectory'],
+                    summary: 'Returns exactly one XTC frame using only the frame start offset.',
+                    operationId: 'getTrajectoryFrameByStart',
+                    parameters: [
+                        { name: 'id', in: 'path', description: 'Trajectory id.', required: true, schema: { type: 'string' }, style: 'simple' },
+                        { name: 'start', in: 'path', description: 'Exact frame start offset.', required: true, schema: { type: 'string' }, style: 'simple' }
+                    ],
+                    responses: {
+                        200: { description: 'Single-frame payload.', content: { 'application/json': {} } },
+                        404: { description: 'Trajectory or frame not found.', content: { 'application/json': {} } }
+                    }
+                }
+            },
+            [mapPath('api/v1/trajectory/{id}/frame-range/offset/{start}/{end}')]: {
+                get: {
+                    tags: ['Trajectory'],
+                    summary: 'Returns all complete XTC frames within a byte range using an exclusive end boundary.',
+                    operationId: 'getTrajectoryFrameRange',
+                    parameters: [
+                        { name: 'id', in: 'path', description: 'Trajectory id.', required: true, schema: { type: 'string' }, style: 'simple' },
+                        { name: 'start', in: 'path', description: 'Start offset for the range.', required: true, schema: { type: 'string' }, style: 'simple' },
+                        { name: 'end', in: 'path', description: 'Exclusive upper bound for the range or Infinity.', required: true, schema: { type: 'string' }, style: 'simple' }
+                    ],
+                    responses: {
+                        200: { description: 'Multi-frame payload.', content: { 'application/json': {} } },
                         404: { description: 'Trajectory or frame range not found.', content: { 'application/json': {} } }
                     }
                 }

@@ -53,6 +53,9 @@ GET <trajectory-base-url>/frame/offset/:start/:end
 Response body:
 
 - JSON matching the XTC payload shape consumed by Mol*
+- exactly one frame, even though the request supplies `start` and `end`
+
+`end` is an exclusive upper bound and is normally the next frame start or `Infinity`.
 
 Example URL shape:
 
@@ -180,6 +183,17 @@ Important:
 
 - `trajectoryUrl` must be the trajectory base resource URL
 - the runtime class appends `/starts` and `/frame/offset/...` itself
+- `/frame/offset/...` must keep the legacy single-frame contract because the runtime expects one frame payload per request
+
+## 4a. Optional convenience endpoints
+
+These are useful for non-Mol* clients but are not required by the current Mol* runtime:
+
+- `GET <trajectory-base-url>/frame/start/:start`
+  - resolves the next frame boundary server-side
+  - returns exactly one frame
+- `GET <trajectory-base-url>/frame-range/offset/:start/:end`
+  - returns all complete frames inside the exclusive byte range
 
 ## 5. Optional UI layer
 
@@ -221,6 +235,8 @@ Backend:
 
 - [ ] expose `GET /starts`
 - [ ] expose `GET /frame/offset/:start/:end`
+- [ ] optionally expose `GET /frame/start/:start`
+- [ ] optionally expose `GET /frame-range/offset/:start/:end`
 - [ ] optionally expose `GET /api/v1/trajectory`
 
 Mol* runtime:
@@ -255,7 +271,7 @@ Correct:
 
 ### Returning the wrong payload from `/frame/offset/...`
 
-The response must match the XTC JSON shape Mol* expects.
+The response must match the XTC JSON shape Mol* expects and contain exactly one frame.
 
 ### Treating the trajectory as a full download
 

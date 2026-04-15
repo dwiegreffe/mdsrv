@@ -7,8 +7,9 @@
 - The first supported format is `.xtc` only.
 
 ## What
-- Serves trajectory list, create-from-URL, delete, frame-start, and frame-range endpoints.
+- Serves trajectory list, create-from-URL, delete, frame-start index, legacy single-frame streaming, convenience frame-by-start, and explicit multi-frame range endpoints.
 - Persists trajectory metadata in `index.json` and stores payloads under `files/` inside the configured working folder.
+- Persists a lazy frame-start sidecar index next to `.xtc` files after the first streaming request.
 - Exposes Swagger/OpenAPI docs for the module API.
 
 ## Why
@@ -19,6 +20,10 @@
 ## How
 - **Use:** Start `index.ts` with `--working-folder` and optional `--port`/`--api-prefix`.
 - **Use:** Trajectory files are stored under `<working-folder>/files`, with metadata in `<working-folder>/index.json`.
-- **Use:** The initial API accepts and streams only `.xtc` files.
+- **Use:** `GET /api/v1/trajectory/:id/starts` builds or reuses the cached frame-start index and returns a comma-separated list of byte offsets.
+- **Use:** `GET /api/v1/trajectory/:id/frame/offset/:start/:end` returns exactly one frame. `end` is an exclusive upper bound and is typically the next frame start or `Infinity`.
+- **Use:** `GET /api/v1/trajectory/:id/frame/start/:start` resolves the next frame boundary from the cached starts index and returns exactly one frame.
+- **Use:** `GET /api/v1/trajectory/:id/frame-range/offset/:start/:end` returns all complete frames in the exclusive byte range.
+- **Use:** The API accepts and streams only `.xtc` files.
 - **Extend:** Add `.dcd` and `.trr` support here later instead of extending `remote-session`.
 - **Integrate:** Route `/api/v1/trajectory` to this service at the proxy layer.
