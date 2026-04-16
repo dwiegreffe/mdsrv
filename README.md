@@ -16,12 +16,16 @@ This setup uses one shared multi-stage app Dockerfile and one shared Docker Comp
 This starts separate services with separate host data directories:
 
 - API docs on `http://127.0.0.1:1337/docs`
-- remote session / trajectory streaming under `http://127.0.0.1:1337/api/v1/session`
+- remote session API under `http://127.0.0.1:1337/api/v1/session`
+- modular trajectory registry / XTC streaming under `http://127.0.0.1:1337/api/v1/trajectory`
+- modular topology registry under `http://127.0.0.1:1337/api/v1/topology`
 - YAML file API under `http://127.0.0.1:1337/api/v1/yaml`
 
-Internally this uses three containers:
+Internally this uses five containers:
 
 - `mdsrv-remote-session`
+- `mdsrv-trajectory-registry`
+- `mdsrv-topology-registry`
 - `mdsrv-yml-server`
 - `mdsrv-proxy`
 
@@ -39,6 +43,12 @@ Run in background:
 docker compose up --build -d
 ```
 
+Rebuild and restart the active Docker setup with the helper script:
+
+```bash
+bash scripts/rebuild-restart-docker.sh
+```
+
 Stop:
 
 ```bash
@@ -48,6 +58,8 @@ docker compose down
 The split host data directories are:
 
 - `docker/data/remote-session/`
+- `docker/data/trajectory-registry/`
+- `docker/data/topology-registry/`
 - `docker/data/yml/`
 
 Both services are reachable through the same host IP and the same external port from outside Docker:
@@ -55,7 +67,13 @@ Both services are reachable through the same host IP and the same external port 
 - `<host-ip>:1337/docs` for API docs
 - `<host-ip>:1337/api/v1/session` for session endpoints
 - `<host-ip>:1337/api/v1/trajectory` for trajectory endpoints
+- `<host-ip>:1337/api/v1/topology` for topology endpoints
 - `<host-ip>:1337/api/v1/yaml` for the YAML API
+
+Direct file uploads are supported for the modular registries:
+
+- `PUT /api/v1/topology/:id` for raw `.pdb` uploads
+- `PUT /api/v1/trajectory/:id` for raw `.xtc` uploads
 
 #### Build minimized runtime images directly
 
@@ -69,6 +87,18 @@ Build the YAML server runtime image:
 
 ```bash
 docker build --target yml-server-runtime -f docker/server/Dockerfile -t mdsrv-yml-server .
+```
+
+Build the trajectory registry runtime image:
+
+```bash
+docker build --target trajectory-registry-runtime -f docker/server/Dockerfile -t mdsrv-trajectory-registry .
+```
+
+Build the topology registry runtime image:
+
+```bash
+docker build --target topology-registry-runtime -f docker/server/Dockerfile -t mdsrv-topology-registry .
 ```
 
 ### Build and run viewer
@@ -106,11 +136,14 @@ For the split setup with separate containers and separate host data directories:
 - unified API docs on `/docs`
 - session API on `/api/v1/session`
 - trajectory API on `/api/v1/trajectory`
+- topology API on `/api/v1/topology`
 - YAML API on `/api/v1/yaml`
 
 see [docs/docker-compose.md](docs/docker-compose.md).
 
 Standalone YAML server endpoint and storage details are documented in [docs/yml-server.md](docs/yml-server.md).
+
+The modular deployment and proxy wiring are documented in [docs/docker-compose.md](docs/docker-compose.md).
 
 For external app developers, see the unified backend handoff guide: [docs/api-usage-guide.md](docs/api-usage-guide.md).
 

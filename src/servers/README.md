@@ -3,7 +3,7 @@
 ## Summary
 - This tree contains the server-side runtimes, CLIs, and shared helpers that ship with this repository.
 - It exists to expose Mol* data through HTTP APIs and local batch tooling.
-- The main server families here are `model`, `volume`, `plugin-state`, and `yml-server`.
+- The main server families here are `model`, `volume`, `plugin-state`, `yml-server`, `trajectory-registry`, and `topology-registry`.
 - Shared HTTP/docs helpers live in `common`.
 - The current Docker stack also includes the remote-session service, but its source lives in `src/extensions/remote-session/server`, not here.
 
@@ -12,6 +12,8 @@
 - `volume` serves density/volume queries and packer/query CLIs for the custom volume format.
 - `plugin-state` is a small file-backed state storage server.
 - `yml-server` is a small file-backed YAML CRUD API with validation.
+- `trajectory-registry` is a small file-backed XTC registry and frame streaming service.
+- `topology-registry` is a small file-backed PDB registry service.
 - `common` holds reusable server helpers used across multiple server modules.
 - This tree does not contain the reverse proxy or container orchestration files; those live under `docker/` and the repository root.
 
@@ -23,8 +25,8 @@
 
 ## How
 - **Use:** Start from each server's entrypoint (`server.ts`, `index.ts`, `pack.ts`, `query.ts`, or `preprocess.ts`) depending on whether you need an HTTP service or a CLI.
-- **Use:** For the current containerized setup, `mdsrv-proxy` is the public entrypoint, `mdsrv-yml-server` serves YAML files, and `mdsrv-remote-session` serves sessions/trajectories from the extensions tree.
-- **Use:** `model` and `volume` are the larger domain servers; `plugin-state` and `yml-server` are smaller storage-oriented services.
+- **Use:** For the current containerized setup, `mdsrv-proxy` is the public entrypoint, `mdsrv-remote-session` serves sessions, `mdsrv-trajectory-registry` serves modular XTC streaming, `mdsrv-topology-registry` serves modular PDB registry endpoints, and `mdsrv-yml-server` serves YAML files.
+- **Use:** `model` and `volume` are the larger domain servers; `plugin-state`, `yml-server`, `trajectory-registry`, and `topology-registry` are smaller storage-oriented services.
 - **Extend:** Put shared HTTP or Swagger helpers into `common` instead of duplicating them in each server.
 - **Extend:** Keep runnable entrypoints thin and move domain logic into focused subdirectories.
 - **Watch out:** Not every deployed server lives under `src/servers`; document cross-tree runtime wiring when changing Docker or proxy behavior.

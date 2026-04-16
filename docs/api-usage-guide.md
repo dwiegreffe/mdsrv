@@ -24,6 +24,7 @@ Main API namespaces:
 
 - Session API: `/api/v1/session`
 - Trajectory API: `/api/v1/trajectory`
+- Topology API: `/api/v1/topology`
 - YAML API: `/api/v1/yaml`
 
 ## API overview
@@ -41,17 +42,33 @@ Endpoints:
 
 ### 2. Trajectory API
 
-Use this API to list trajectories, register a trajectory by remote URL, access frame offsets, stream individual frames, and delete trajectories.
+Use this API to list trajectories, register a trajectory by remote URL, access cached frame offsets, stream individual frames, stream frame ranges, and delete trajectories.
 
 Endpoints:
 
 - `GET /api/v1/trajectory`
 - `POST /api/v1/trajectory`
+- `PUT /api/v1/trajectory/:id`
+- `GET /api/v1/trajectory/:id`
 - `DELETE /api/v1/trajectory/:id`
 - `GET /api/v1/trajectory/:id/starts`
 - `GET /api/v1/trajectory/:id/frame/offset/:start/:end`
+- `GET /api/v1/trajectory/:id/frame/start/:start`
+- `GET /api/v1/trajectory/:id/frame-range/offset/:start/:end`
 
-### 3. YAML API
+### 3. Topology API
+
+Use this API to list, register, fetch, and delete stored PDB topology files.
+
+Endpoints:
+
+- `GET /api/v1/topology`
+- `POST /api/v1/topology`
+- `PUT /api/v1/topology/:id`
+- `GET /api/v1/topology/:id`
+- `DELETE /api/v1/topology/:id`
+
+### 4. YAML API
 
 Use this API to manage user-editable YAML files on the server.
 
@@ -98,7 +115,7 @@ If the file already exists, the server returns `409 Conflict`.
 ```bash
 curl -i -X PUT "http://127.0.0.1:1337/api/v1/yaml/config.yml" \
   -H "Content-Type: text/yaml" \
-  --data-binary $'name: config\nversion: 1\n'
+  --data-binary $'schemaVersion: 1\nname: config\n'
 ```
 
 ## Update an existing YAML file
@@ -109,7 +126,7 @@ If the file does not exist, the server returns `404 Not Found`.
 ```bash
 curl -i -X POST "http://127.0.0.1:1337/api/v1/yaml/config.yml" \
   -H "Content-Type: text/yaml" \
-  --data-binary $'name: config\nversion: 2\n'
+  --data-binary $'schemaVersion: 2\nname: config\n'
 ```
 
 ## Read a YAML file
@@ -179,6 +196,20 @@ curl -i -X POST "http://127.0.0.1:1337/api/v1/trajectory" \
   }'
 ```
 
+## Upload a trajectory directly from local file bytes
+
+```bash
+curl -i -X PUT "http://127.0.0.1:1337/api/v1/trajectory/traj-001?name=traj-001&fileName=traj-001.xtc&source=frontend-upload" \
+  -H "Content-Type: application/octet-stream" \
+  --data-binary @traj-001.xtc
+```
+
+## Read a stored trajectory file
+
+```bash
+curl -OJ "http://127.0.0.1:1337/api/v1/trajectory/traj-001"
+```
+
 ## Get trajectory frame starts
 
 ```bash
@@ -187,14 +218,75 @@ curl "http://127.0.0.1:1337/api/v1/trajectory/traj-001/starts"
 
 ## Get one trajectory frame by offset range
 
+`end` is an exclusive upper bound. In typical Mol* usage it is the next frame start or `Infinity`.
+
 ```bash
 curl "http://127.0.0.1:1337/api/v1/trajectory/traj-001/frame/offset/0/1024"
+```
+
+## Get one trajectory frame by start offset
+
+The server resolves the next frame boundary from the cached starts index.
+
+```bash
+curl "http://127.0.0.1:1337/api/v1/trajectory/traj-001/frame/start/0"
+```
+
+## Get a trajectory frame range by byte range
+
+`end` is an exclusive upper bound and the response may contain multiple frames.
+
+```bash
+curl "http://127.0.0.1:1337/api/v1/trajectory/traj-001/frame-range/offset/0/4096"
 ```
 
 ## Delete a trajectory
 
 ```bash
 curl -i -X DELETE "http://127.0.0.1:1337/api/v1/trajectory/traj-001"
+```
+
+## List topologies
+
+```bash
+curl http://127.0.0.1:1337/api/v1/topology
+```
+
+## Register a topology from a remote URL
+
+The server fetches the topology from the given URL and stores it locally.
+
+```bash
+curl -i -X POST "http://127.0.0.1:1337/api/v1/topology" \
+  -H "Content-Type: application/json" \
+  --data '{
+    "url": "https://files.rcsb.org/download/1CBS.pdb",
+    "id": "1cbs",
+    "fileName": "1cbs.pdb",
+    "name": "1CBS",
+    "description": "Example topology",
+    "source": "RCSB"
+  }'
+```
+
+## Upload a topology directly from local file bytes
+
+```bash
+curl -i -X PUT "http://127.0.0.1:1337/api/v1/topology/1cbs?name=1CBS&fileName=1cbs.pdb&source=frontend-upload" \
+  -H "Content-Type: chemical/x-pdb" \
+  --data-binary @1cbs.pdb
+```
+
+## Read a topology
+
+```bash
+curl http://127.0.0.1:1337/api/v1/topology/1cbs
+```
+
+## Delete a topology
+
+```bash
+curl -i -X DELETE "http://127.0.0.1:1337/api/v1/topology/1cbs"
 ```
 
 ## YAML file rules and validation
@@ -204,9 +296,6 @@ The YAML API enforces file-level validation rules defined by the server host.
 Typical rules include:
 
 - required keys
-- forbidden keys
-- forbidden words
-- maximum file size
 - valid YAML syntax
 - valid file names
 
@@ -214,12 +303,11 @@ Example rule config:
 
 ```json
 {
-  "forbiddenWords": ["password", "secret"],
-  "forbiddenKeys": ["debug", "internal"],
-  "requiredKeys": ["name", "version"],
-  "maxFileSizeBytes": 65536
+  "requiredKeys": ["schemaVersion"]
 }
 ```
+
+In the default Docker setup, `schemaVersion` is the only documented YAML content requirement and it must be defined at the top level.
 
 ### File naming rules
 
@@ -270,7 +358,8 @@ For external apps, treat `400`, `404`, and `409` as expected business/API errors
 2. load `/api/v1/openapi.json` or inspect `/docs`
 3. integrate YAML list/create/update/read/delete if you need editable config files
 4. integrate session upload/download if you need Mol* session persistence
-5. integrate trajectory registration and frame access if you need streaming support
+5. integrate topology registration if you need modular structure-file storage
+6. integrate trajectory registration and frame access if you need streaming support
 
 ## Related docs
 

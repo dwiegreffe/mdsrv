@@ -50,7 +50,7 @@ curl http://127.0.0.1:1337/api/v1/yaml/test.yml
 ```bash
 curl -i -X PUT "http://127.0.0.1:1337/api/v1/yaml/test.yml" \
   -H "Content-Type: text/yaml" \
-  --data-binary $'name: test\nversion: 1\n'
+  --data-binary $'schemaVersion: 1\nname: test\n'
 ```
 
 ### Update a file
@@ -60,7 +60,7 @@ curl -i -X PUT "http://127.0.0.1:1337/api/v1/yaml/test.yml" \
 ```bash
 curl -i -X POST "http://127.0.0.1:1337/api/v1/yaml/test.yml" \
   -H "Content-Type: text/yaml" \
-  --data-binary $'name: test\nversion: 2\n'
+  --data-binary $'schemaVersion: 2\nname: test\n'
 ```
 
 ### Rename a file
@@ -87,10 +87,7 @@ Example:
 
 ```json
 {
-  "forbiddenWords": ["password", "secret"],
-  "forbiddenKeys": ["debug", "internal"],
-  "requiredKeys": ["name", "version"],
-  "maxFileSizeBytes": 65536
+  "requiredKeys": ["schemaVersion"]
 }
 ```
 
@@ -98,10 +95,14 @@ Current built-in validation:
 
 - filename validation
 - parseable YAML
-- forbidden words
-- forbidden keys
-- required keys
-- max file size
+- top-level `schemaVersion` required by the default rules file
+
+Expected YAML shape in the default Docker setup:
+
+```yaml
+schemaVersion: 1
+name: test
+```
 
 ## Notes
 
