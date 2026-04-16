@@ -11,3 +11,5 @@ tsconfig.commonjs.tsbuildinfo
 .idea
 
 .DS_Store
+
+docker/data/**
