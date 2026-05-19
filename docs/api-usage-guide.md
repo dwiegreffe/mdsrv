@@ -31,7 +31,7 @@ Main API namespaces:
 
 ### 1. Session API
 
-Use this API to upload, list, download, and delete Mol* session archives.
+Use this API to upload, list, download, and delete Mol\* session archives.
 
 Endpoints:
 
@@ -54,7 +54,9 @@ Endpoints:
 - `GET /api/v1/trajectory/:id/starts`
 - `GET /api/v1/trajectory/:id/frame/offset/:start/:end`
 - `GET /api/v1/trajectory/:id/frame/start/:start`
-- `GET /api/v1/trajectory/:id/frame-range/offset/:start/:end`
+- `GET /api/v1/trajectory/:id/frame-range/index/:index/:count`
+- `GET /api/v1/trajectory/monitor/requests`
+- `GET /api/v1/trajectory/monitor/plot`
 
 ### 3. Topology API
 
@@ -92,7 +94,7 @@ curl http://127.0.0.1:1337/health
 Expected response:
 
 ```json
-{"status":"ok"}
+{ "status": "ok" }
 ```
 
 ## List available YAML files
@@ -155,7 +157,7 @@ curl http://127.0.0.1:1337/api/v1/session
 
 ## Upload a session
 
-Upload a Mol* session archive as `application/zip`.
+Upload a Mol\* session archive as `application/zip`.
 
 ```bash
 curl -i -X POST "http://127.0.0.1:1337/api/v1/session?name=my-session&version=molstar-max" \
@@ -218,7 +220,7 @@ curl "http://127.0.0.1:1337/api/v1/trajectory/traj-001/starts"
 
 ## Get one trajectory frame by offset range
 
-`end` is an exclusive upper bound. In typical Mol* usage it is the next frame start or `Infinity`.
+`end` is an exclusive upper bound. In typical Mol\* usage it is the next frame start or `Infinity`.
 
 ```bash
 curl "http://127.0.0.1:1337/api/v1/trajectory/traj-001/frame/offset/0/1024"
@@ -232,12 +234,12 @@ The server resolves the next frame boundary from the cached starts index.
 curl "http://127.0.0.1:1337/api/v1/trajectory/traj-001/frame/start/0"
 ```
 
-## Get a trajectory frame range by byte range
+## Get a trajectory frame range by frame index and count
 
-`end` is an exclusive upper bound and the response may contain multiple frames.
+`index` is zero-based and `count` is the number of consecutive frames to return.
 
 ```bash
-curl "http://127.0.0.1:1337/api/v1/trajectory/traj-001/frame-range/offset/0/4096"
+curl "http://127.0.0.1:1337/api/v1/trajectory/traj-001/frame-range/index/0/10"
 ```
 
 ## Delete a trajectory
@@ -245,6 +247,29 @@ curl "http://127.0.0.1:1337/api/v1/trajectory/traj-001/frame-range/offset/0/4096
 ```bash
 curl -i -X DELETE "http://127.0.0.1:1337/api/v1/trajectory/traj-001"
 ```
+
+## Monitor trajectory requests
+
+The trajectory registry writes JSONL request logs without payloads and can aggregate them into time buckets.
+
+```bash
+curl "http://127.0.0.1:1337/api/v1/trajectory/monitor/requests?from=2026-04-16T00:00:00.000Z&to=2026-04-17T00:00:00.000Z&bucket=1h"
+```
+
+Open the built-in monitoring page:
+
+```bash
+open "http://127.0.0.1:1337/api/v1/trajectory/monitor/plot"
+```
+
+The plot page auto-refreshes every second, stacks requests by request type with distinct colors, and renders these default windows:
+
+- last hour with 1-minute buckets
+- last 24 hours with 1-hour buckets
+- last 31 days with 1-day buckets
+- last 365 days with 1-month buckets
+
+Each chart also provides its own bucket-size dropdown so you can change the aggregation granularity without leaving the page.
 
 ## List topologies
 
@@ -357,7 +382,7 @@ For external apps, treat `400`, `404`, and `409` as expected business/API errors
 1. call `/health`
 2. load `/api/v1/openapi.json` or inspect `/docs`
 3. integrate YAML list/create/update/read/delete if you need editable config files
-4. integrate session upload/download if you need Mol* session persistence
+4. integrate session upload/download if you need Mol\* session persistence
 5. integrate topology registration if you need modular structure-file storage
 6. integrate trajectory registration and frame access if you need streaming support
 

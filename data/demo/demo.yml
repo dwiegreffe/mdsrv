@@ -1,0 +1,470 @@
+schemaVersion: 1
+dataSources:
+  - id: d1
+    label: florian + florian
+    payloadKind: trajectory-pair
+    transport: http
+    topologyRef:
+      kind: cloud-topology
+      url: http://127.0.0.1:1337/api/v1/topology/florian
+    trajectoryRef:
+      kind: cloud-trajectory
+      url: http://127.0.0.1:1337/api/v1/trajectory/florian
+managedSessions:
+  - id: s1
+    dataSourceId: d1
+    label: florian + florian
+    desiredState: connected
+cameras:
+  - id: cam-s1
+    sessionId: s1
+    label: Camera
+    snapshot:
+      mode: perspective
+      fov: 0.7853981633974483
+      position:
+        - 62.9470121888559
+        - 62.68625122350231
+        - 200.63206516909844
+      target:
+        - 62.9470121888559
+        - 62.68625122350231
+        - 65.45820037893108
+      up:
+        - 0
+        - 1
+        - 0
+      radius: 51.71976599523709
+      radiusMax: 51.71976599523709
+      fog: 15
+      clipFar: true
+      minNear: 1
+      minFar: 0
+trajectories:
+  - id: t1
+    sessionId: s1
+    label: Trajectory 1
+models:
+  - id: m1
+    sessionId: s1
+    trajectoryId: t1
+    label: Model 0
+    modelIndex: 0
+structures:
+  - id: st1
+    sessionId: s1
+    modelId: m1
+    label: Structure
+structureComponents:
+  - id: c1
+    sessionId: s1
+    structureId: st1
+    label: Polymer
+    structureLabel: Model
+    componentParams:
+      type:
+        name: static
+        params: polymer
+      nullIfEmpty: true
+      label: ""
+    selected: true
+  - id: c2
+    sessionId: s1
+    structureId: st1
+    label: Custom Selection 2
+    structureLabel: Model
+    componentParams:
+      type:
+        name: bundle
+        params:
+          hash: 1599799631
+          elements:
+            - groupedUnits:
+                - - 0
+              set: []
+              ranges:
+                - 5575
+                - 5624
+      nullIfEmpty: true
+      label: Custom Selection 2
+    selected: true
+  - id: c3
+    sessionId: s1
+    structureId: st1
+    label: Custom Selection 3
+    structureLabel: Model
+    componentParams:
+      type:
+        name: bundle
+        params:
+          hash: 1599799631
+          elements:
+            - groupedUnits:
+                - - 0
+              set: []
+              ranges:
+                - 0
+                - 5574
+      nullIfEmpty: true
+      label: Custom Selection 3
+    selected: true
+  - id: c4
+    sessionId: s1
+    structureId: st1
+    label: Custom Selection 4
+    structureLabel: Model
+    componentParams:
+      type:
+        name: bundle
+        params:
+          hash: 1599799631
+          elements:
+            - groupedUnits:
+                - - 0
+              set: []
+              ranges:
+                - 5625
+                - 5832
+      nullIfEmpty: true
+      label: Custom Selection 4
+    selected: true
+  - id: c5
+    sessionId: s1
+    structureId: st1
+    label: Custom Selection 5
+    structureLabel: Model
+    componentParams:
+      type:
+        name: bundle
+        params:
+          hash: 1599799631
+          elements:
+            - groupedUnits:
+                - - 0
+              set: []
+              ranges:
+                - 4649
+                - 4755
+      nullIfEmpty: true
+      label: Custom Selection 5
+    selected: true
+  - id: c6
+    sessionId: s1
+    structureId: st1
+    label: Custom Selection 6
+    structureLabel: Model
+    componentParams:
+      type:
+        name: bundle
+        params:
+          hash: 1599799631
+          elements:
+            - groupedUnits:
+                - - 0
+              set: []
+              ranges:
+                - 5089
+                - 5295
+      nullIfEmpty: true
+      label: Custom Selection 6
+    selected: true
+structureRepresentations3d:
+  - id: r1
+    sessionId: s1
+    componentId: c1
+    componentLabel: Polymer
+    structureLabel: Model
+    label: Cartoon
+    representationType: cartoon
+    colorTheme: chain-id
+    params:
+      alpha: 1
+      quality: auto
+      xrayShaded: false
+      ignoreLight: false
+      transparentBackfaces: off
+    selected: true
+  - id: r2
+    sessionId: s1
+    componentId: c2
+    componentLabel: Custom Selection 2
+    structureLabel: Model
+    label: Ball & Stick
+    representationType: ball-and-stick
+    colorTheme: element-symbol
+    params:
+      alpha: 1
+      quality: auto
+      xrayShaded: false
+      ignoreLight: false
+      transparentBackfaces: off
+    selected: true
+  - id: r3
+    sessionId: s1
+    componentId: c3
+    componentLabel: Custom Selection 3
+    structureLabel: Model
+    label: Gaussian Volume
+    representationType: gaussian-volume
+    colorTheme: chain-id
+    params:
+      alpha: 1
+      quality: auto
+      xrayShaded: false
+      ignoreLight: false
+    selected: true
+  - id: r4
+    sessionId: s1
+    componentId: c4
+    componentLabel: Custom Selection 4
+    structureLabel: Model
+    label: Gaussian Volume
+    representationType: gaussian-volume
+    colorTheme: chain-id
+    params:
+      alpha: 1
+      quality: auto
+      xrayShaded: false
+      ignoreLight: false
+    selected: true
+  - id: r5
+    sessionId: s1
+    componentId: c5
+    componentLabel: Custom Selection 5
+    structureLabel: Model
+    label: Gaussian Surface
+    representationType: gaussian-surface
+    colorTheme: chain-id
+    params:
+      alpha: 1
+      quality: auto
+      xrayShaded: false
+      ignoreLight: false
+      transparentBackfaces: off
+    selected: true
+  - id: r6
+    sessionId: s1
+    componentId: c6
+    componentLabel: Custom Selection 6
+    structureLabel: Model
+    label: Gaussian Surface
+    representationType: gaussian-surface
+    colorTheme: chain-id
+    params:
+      alpha: 1
+      quality: auto
+      xrayShaded: false
+      ignoreLight: false
+      transparentBackfaces: off
+    selected: true
+representation3dStates: []
+trajectoryMeasurements:
+  - sessionKey: trajectory:cloud-topology:http://127.0.0.1:1337/api/v1/topology/florian|cloud-trajectory:http://127.0.0.1:1337/api/v1/trajectory/florian
+    type: distance
+    label: distance
+    unit: angstrom
+    selections:
+      - bundle:
+          hash: 1599799631
+          elements:
+            - groupedUnits:
+                - - 0
+              set: []
+              ranges:
+                - 2861
+                - 2875
+      - bundle:
+          hash: 1599799631
+          elements:
+            - groupedUnits:
+                - - 0
+              set: []
+              ranges:
+                - 4660
+                - 4683
+    id: m1
+    runtimeNodeId: measurement:CKusmYNfPWSoQ_ZMKkQdoA
+    sessionId: s1
+    trajectoryId: t1
+    selected: true
+  - sessionKey: trajectory:cloud-topology:http://127.0.0.1:1337/api/v1/topology/florian|cloud-trajectory:http://127.0.0.1:1337/api/v1/trajectory/florian
+    type: distance
+    label: distance
+    unit: angstrom
+    selections:
+      - bundle:
+          hash: 1599799631
+          elements:
+            - groupedUnits:
+                - - 0
+              set: []
+              ranges:
+                - 885
+                - 895
+      - bundle:
+          hash: 1599799631
+          elements:
+            - groupedUnits:
+                - - 0
+              set: []
+              ranges:
+                - 1447
+                - 1453
+    id: m2
+    runtimeNodeId: measurement:PAJS9ce7Sxse7jQJy-3HxQ
+    sessionId: s1
+    trajectoryId: t1
+observations:
+  - id: "1"
+    frame: 1
+    text: "# Overview"
+  - id: "2"
+    frame: 100
+    text: "# Zoom"
+  - id: "3"
+    frame: 200
+    text: "# Zoom Out"
+  - id: "4"
+    frame: 750
+    text: "# Distance"
+observationSessionSnapshots:
+  - id: oss1
+    observationId: "1"
+    sessionId: s1
+    capturedAt: 1774883980231
+    cameraSnapshot:
+      mode: perspective
+      fov: 0.7853981633974483
+      position:
+        - 73.804380282975
+        - 47.24786561542722
+        - 199.30792032707174
+      target:
+        - 62.9470121888559
+        - 62.68625122350231
+        - 65.45820037893108
+      up:
+        - -0.9500076058244304
+        - 0.29193122074783484
+        - 0.1107326114042861
+      radius: 51.71976599523709
+      radiusMax: 51.71976599523709
+      fog: 15
+      clipFar: true
+      minNear: 1
+      minFar: 0
+    focusSnapshot: {}
+    structureComponentIds:
+      - c1
+    structureRepresentation3dIds:
+      - r1
+  - id: oss2
+    observationId: "2"
+    sessionId: s1
+    capturedAt: 1774884097221
+    cameraSnapshot:
+      mode: perspective
+      fov: 0.7853981633974483
+      position:
+        - 58.7005912666151
+        - 62.435098816534556
+        - 97.69046533975828
+      target:
+        - 54.500735877937764
+        - 51.011659705195534
+        - 64.79676817886069
+      up:
+        - -0.9860087544998793
+        - 0.14935565572305948
+        - 0.07402448347087645
+      radius: 51.50665207779419
+      radiusMax: 51.50665207779419
+      fog: 15
+      clipFar: true
+      minNear: 1
+      minFar: 0
+    focusSnapshot: {}
+    structureComponentIds:
+      - c2
+      - c1
+    structureRepresentation3dIds:
+      - r2
+      - r1
+  - id: oss3
+    observationId: "3"
+    sessionId: s1
+    capturedAt: 1774884068789
+    cameraSnapshot:
+      mode: perspective
+      fov: 0.7853981633974483
+      position:
+        - 65.96967261926687
+        - 79.57515929172447
+        - 150.12709147589348
+      target:
+        - 56.10874300225307
+        - 57.53649905201449
+        - 65.12691141384497
+      up:
+        - -0.9839100452423171
+        - 0.16363933861267907
+        - 0.07171603537335801
+      radius: 51.50665207779419
+      radiusMax: 51.50665207779419
+      fog: 15
+      clipFar: true
+      minNear: 1
+      minFar: 0
+    focusSnapshot: {}
+    structureComponentIds:
+      - c2
+      - c3
+      - c4
+      - c5
+      - c6
+      - c1
+    structureRepresentation3dIds:
+      - r2
+      - r3
+      - r4
+      - r5
+      - r6
+      - r1
+  - id: oss4
+    observationId: "4"
+    sessionId: s1
+    capturedAt: 1776940956383
+    cameraSnapshot:
+      mode: perspective
+      fov: 0.7853981633974483
+      position:
+        - 37.09883144773918
+        - 75.29164343343007
+        - 101.24950381114874
+      target:
+        - 50.645545563268435
+        - 57.411117474363124
+        - 66.96249872891885
+      up:
+        - -0.9391252715842651
+        - -0.2399248764638995
+        - -0.2459263668774715
+      radius: 8
+      radiusMax: 55.91013655506771
+      fog: 15
+      clipFar: true
+      minNear: 1
+      minFar: 0
+    focusSnapshot: {}
+    measurementIds:
+      - m1
+    structureComponentIds:
+      - c2
+      - c3
+      - c4
+      - c1
+    structureRepresentation3dIds:
+      - r2
+      - r3
+      - r4
+      - r1

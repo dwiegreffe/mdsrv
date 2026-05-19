@@ -16,21 +16,48 @@
       "get": {
         "tags": ["Session"],
         "summary": "List stored sessions",
-        "responses": { "200": { "description": "Session list", "content": { "application/json": {} } } }
+        "responses": {
+          "200": {
+            "description": "Session list",
+            "content": { "application/json": {} }
+          }
+        }
       },
       "post": {
         "tags": ["Session"],
         "summary": "Upload a Mol* session ZIP",
         "parameters": [
-          { "name": "name", "in": "query", "required": false, "schema": { "type": "string" } },
-          { "name": "description", "in": "query", "required": false, "schema": { "type": "string" } },
-          { "name": "source", "in": "query", "required": false, "schema": { "type": "string" } },
-          { "name": "version", "in": "query", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "description",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          }
         ],
         "requestBody": {
           "required": true,
           "content": {
-            "application/zip": { "schema": { "type": "string", "format": "binary" } }
+            "application/zip": {
+              "schema": { "type": "string", "format": "binary" }
+            }
           }
         },
         "responses": { "200": { "description": "Upload complete" } }
@@ -41,15 +68,30 @@
         "tags": ["Session"],
         "summary": "Download a stored session",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
         ],
-        "responses": { "200": { "description": "Session ZIP", "content": { "application/zip": {} } } }
+        "responses": {
+          "200": {
+            "description": "Session ZIP",
+            "content": { "application/zip": {} }
+          }
+        }
       },
       "delete": {
         "tags": ["Session"],
         "summary": "Delete a stored session",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
         ],
         "responses": { "200": { "description": "Deleted" } }
       }
@@ -58,7 +100,12 @@
       "get": {
         "tags": ["Trajectory"],
         "summary": "List stored trajectories",
-        "responses": { "200": { "description": "Trajectory list", "content": { "application/json": {} } } }
+        "responses": {
+          "200": {
+            "description": "Trajectory list",
+            "content": { "application/json": {} }
+          }
+        }
       },
       "post": {
         "tags": ["Trajectory"],
@@ -88,29 +135,120 @@
         }
       }
     },
+    "/api/v1/trajectory/monitor/requests": {
+      "get": {
+        "tags": ["Trajectory"],
+        "summary": "Get aggregated trajectory request counts from the local access log",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "bucket",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "trajectoryId",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "endpoint",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Aggregated request metrics",
+            "content": { "application/json": {} }
+          },
+          "400": {
+            "description": "Invalid metrics query",
+            "content": { "application/json": {} }
+          }
+        }
+      }
+    },
     "/api/v1/trajectory/{id}": {
       "get": {
         "tags": ["Trajectory"],
         "summary": "Read a stored XTC trajectory file",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
         ],
-        "responses": { "200": { "description": "XTC content", "content": { "application/octet-stream": {} } } }
+        "responses": {
+          "200": {
+            "description": "XTC content",
+            "content": { "application/octet-stream": {} }
+          }
+        }
       },
       "put": {
         "tags": ["Trajectory"],
         "summary": "Upload an XTC trajectory directly",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
-          { "name": "name", "in": "query", "required": false, "schema": { "type": "string" } },
-          { "name": "description", "in": "query", "required": false, "schema": { "type": "string" } },
-          { "name": "source", "in": "query", "required": false, "schema": { "type": "string" } },
-          { "name": "fileName", "in": "query", "required": false, "schema": { "type": "string" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "description",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "fileName",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          }
         ],
         "requestBody": {
           "required": true,
           "content": {
-            "application/octet-stream": { "schema": { "type": "string", "format": "binary" } }
+            "application/octet-stream": {
+              "schema": { "type": "string", "format": "binary" }
+            }
           }
         },
         "responses": {
@@ -124,7 +262,12 @@
         "tags": ["Trajectory"],
         "summary": "Delete a stored trajectory",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
         ],
         "responses": { "200": { "description": "Deleted" } }
       }
@@ -134,9 +277,19 @@
         "tags": ["Trajectory"],
         "summary": "Get trajectory frame start offsets",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
         ],
-        "responses": { "200": { "description": "Frame starts", "content": { "text/plain": {} } } }
+        "responses": {
+          "200": {
+            "description": "Frame starts",
+            "content": { "text/plain": {} }
+          }
+        }
       }
     },
     "/api/v1/trajectory/{id}/frame/offset/{start}/{end}": {
@@ -144,11 +297,31 @@
         "tags": ["Trajectory"],
         "summary": "Get exactly one trajectory frame by start offset and exclusive end boundary",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
-          { "name": "start", "in": "path", "required": true, "schema": { "type": "string" } },
-          { "name": "end", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "start",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "end",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
         ],
-        "responses": { "200": { "description": "Single-frame payload", "content": { "application/json": {} } } }
+        "responses": {
+          "200": {
+            "description": "Single-frame payload",
+            "content": { "application/json": {} }
+          }
+        }
       }
     },
     "/api/v1/trajectory/{id}/frame/start/{start}": {
@@ -156,10 +329,25 @@
         "tags": ["Trajectory"],
         "summary": "Get exactly one trajectory frame by frame start offset",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
-          { "name": "start", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "start",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
         ],
-        "responses": { "200": { "description": "Single-frame payload", "content": { "application/json": {} } } }
+        "responses": {
+          "200": {
+            "description": "Single-frame payload",
+            "content": { "application/json": {} }
+          }
+        }
       }
     },
     "/api/v1/trajectory/{id}/frame-range/offset/{start}/{end}": {
@@ -167,18 +355,43 @@
         "tags": ["Trajectory"],
         "summary": "Get all complete trajectory frames in an exclusive byte range",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
-          { "name": "start", "in": "path", "required": true, "schema": { "type": "string" } },
-          { "name": "end", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "start",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "end",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
         ],
-        "responses": { "200": { "description": "Multi-frame payload", "content": { "application/json": {} } } }
+        "responses": {
+          "200": {
+            "description": "Multi-frame payload",
+            "content": { "application/json": {} }
+          }
+        }
       }
     },
     "/api/v1/topology": {
       "get": {
         "tags": ["Topology"],
         "summary": "List stored PDB topology entries",
-        "responses": { "200": { "description": "Topology entries", "content": { "application/json": {} } } }
+        "responses": {
+          "200": {
+            "description": "Topology entries",
+            "content": { "application/json": {} }
+          }
+        }
       },
       "post": {
         "tags": ["Topology"],
@@ -214,11 +427,36 @@
         "tags": ["Topology"],
         "summary": "Upload a PDB topology directly",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
-          { "name": "name", "in": "query", "required": false, "schema": { "type": "string" } },
-          { "name": "description", "in": "query", "required": false, "schema": { "type": "string" } },
-          { "name": "source", "in": "query", "required": false, "schema": { "type": "string" } },
-          { "name": "fileName", "in": "query", "required": false, "schema": { "type": "string" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "description",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "fileName",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          }
         ],
         "requestBody": {
           "required": true,
@@ -238,15 +476,30 @@
         "tags": ["Topology"],
         "summary": "Read a stored PDB topology file",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
         ],
-        "responses": { "200": { "description": "PDB content", "content": { "chemical/x-pdb": {} } } }
+        "responses": {
+          "200": {
+            "description": "PDB content",
+            "content": { "chemical/x-pdb": {} }
+          }
+        }
       },
       "delete": {
         "tags": ["Topology"],
         "summary": "Delete a stored topology",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
         ],
         "responses": {
           "200": { "description": "Deleted" },
@@ -258,7 +511,12 @@
       "get": {
         "tags": ["YAML"],
         "summary": "List available YAML files",
-        "responses": { "200": { "description": "YAML file names", "content": { "application/json": {} } } }
+        "responses": {
+          "200": {
+            "description": "YAML file names",
+            "content": { "application/json": {} }
+          }
+        }
       }
     },
     "/api/v1/yaml/{name}": {
@@ -266,15 +524,30 @@
         "tags": ["YAML"],
         "summary": "Read a YAML file",
         "parameters": [
-          { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
         ],
-        "responses": { "200": { "description": "YAML content", "content": { "text/yaml": {} } } }
+        "responses": {
+          "200": {
+            "description": "YAML content",
+            "content": { "text/yaml": {} }
+          }
+        }
       },
       "put": {
         "tags": ["YAML"],
         "summary": "Create a new YAML file",
         "parameters": [
-          { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
         ],
         "requestBody": {
           "required": true,
@@ -294,7 +567,12 @@
         "tags": ["YAML"],
         "summary": "Update an existing YAML file",
         "parameters": [
-          { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
         ],
         "requestBody": {
           "required": true,
@@ -314,7 +592,12 @@
         "tags": ["YAML"],
         "summary": "Delete a YAML file",
         "parameters": [
-          { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
         ],
         "responses": {
           "200": { "description": "Deleted" },
@@ -327,8 +610,18 @@
         "tags": ["YAML"],
         "summary": "Rename a YAML file",
         "parameters": [
-          { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } },
-          { "name": "to", "in": "query", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          }
         ],
         "responses": {
           "200": { "description": "Renamed" },

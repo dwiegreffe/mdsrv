@@ -88,6 +88,10 @@ Its files are stored in:
 
 - `docker/data/trajectory-registry/`
 
+Trajectory request logs are stored in:
+
+- `docker/data/trajectory-registry/logs/requests.jsonl`
+
 ### 3. Topology registry
 
 Available at:
