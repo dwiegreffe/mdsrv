@@ -81,6 +81,77 @@ export function getSchema(config: Config) {
               description: "Empty response.",
               content: { "text/plain": {} },
             },
+            400: {
+              description: "Invalid session id.",
+              content: { "application/json": {} },
+            },
+            403: {
+              description: "Sticky session cannot be deleted.",
+              content: { "application/json": {} },
+            },
+            404: {
+              description: "Session not found.",
+              content: { "application/json": {} },
+            },
+          },
+        },
+        patch: {
+          tags: ["Session"],
+          summary:
+            "Updates session metadata and optionally renames its id/file.",
+          operationId: "updateSession",
+          parameters: [
+            {
+              name: "id",
+              in: "path",
+              description: "Current session id.",
+              required: true,
+              schema: { type: "string" },
+              style: "simple",
+            },
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    id: {
+                      type: "string",
+                      description:
+                        "Optional new id. If provided, the .molx file is renamed.",
+                    },
+                    name: { type: "string", description: "Display name." },
+                    description: { type: "string" },
+                    source: { type: "string" },
+                    version: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            200: {
+              description: "Session updated.",
+              content: { "application/json": {} },
+            },
+            400: {
+              description: "Invalid request.",
+              content: { "application/json": {} },
+            },
+            403: {
+              description: "Sticky session cannot be modified.",
+              content: { "application/json": {} },
+            },
+            404: {
+              description: "Session not found.",
+              content: { "application/json": {} },
+            },
+            409: {
+              description: "Target session id already exists.",
+              content: { "application/json": {} },
+            },
           },
         },
       },

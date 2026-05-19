@@ -9,6 +9,7 @@ export type TrajectoryRequestEndpoint =
   | "create"
   | "read-file"
   | "upload"
+  | "update"
   | "delete"
   | "starts"
   | "frame-offset"
@@ -67,6 +68,7 @@ const EndpointOrder: TrajectoryRequestEndpoint[] = [
   "create",
   "read-file",
   "upload",
+  "update",
   "delete",
 ];
 
@@ -120,6 +122,8 @@ export function describeTrajectoryRequest(
     if (method === "GET")
       return { endpoint: "read-file", trajectoryId: match[1] };
     if (method === "PUT") return { endpoint: "upload", trajectoryId: match[1] };
+    if (method === "PATCH")
+      return { endpoint: "update", trajectoryId: match[1] };
     if (method === "DELETE")
       return { endpoint: "delete", trajectoryId: match[1] };
     return void 0;
@@ -521,6 +525,7 @@ export function renderTrajectoryMonitorPage(metricsUrl: string) {
       'create': '#14b8a6',
       'read-file': '#f472b6',
       'upload': '#eab308',
+      'update': '#fb7185',
       'delete': '#94a3b8'
     };
     const chartConfigs = [

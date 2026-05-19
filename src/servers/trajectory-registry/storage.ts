@@ -114,6 +114,65 @@ export function createTrajectoryEntry(
   return createdEntry;
 }
 
+export type UpdateTrajectoryEntryParams = {
+  id?: string;
+  name?: string;
+  description?: string;
+  source?: string;
+};
+
+export function updateTrajectoryEntry(
+  config: Config,
+  id: string,
+  updates: UpdateTrajectoryEntryParams,
+) {
+  const normalized = normalizeTrajectoryId(id);
+  const index = readTrajectoryIndex(config);
+  const entryIndex = index.findIndex((existing) => existing.id === normalized);
+  if (entryIndex < 0) return void 0;
+
+  const entry = index[entryIndex];
+  const nextId =
+    updates.id === void 0 ? entry.id : normalizeTrajectoryId(updates.id);
+  const nextFileName =
+    nextId === entry.id
+      ? entry.fileName
+      : normalizeXtcFileName(`${nextId}.xtc`);
+
+  if (nextId !== entry.id && index.some((existing) => existing.id === nextId))
+    throw new Error(`Trajectory '${nextId}' already exists.`);
+  if (
+    nextFileName !== entry.fileName &&
+    index.some((existing) => existing.fileName === nextFileName)
+  )
+    throw new Error(`Trajectory file '${nextFileName}' already exists.`);
+
+  if (nextFileName !== entry.fileName) {
+    const sourcePath = getTrajectoryFilePath(config, entry.fileName);
+    const targetPath = getTrajectoryFilePath(config, nextFileName);
+    fs.renameSync(sourcePath, targetPath);
+
+    const sourceStartsPath = getFrameStartsIndexPath(sourcePath);
+    if (fs.existsSync(sourceStartsPath)) {
+      fs.renameSync(sourceStartsPath, getFrameStartsIndexPath(targetPath));
+    }
+  }
+
+  const updatedEntry: TrajectoryEntry = {
+    ...entry,
+    id: nextId,
+    fileName: nextFileName,
+    name: updates.name === void 0 ? entry.name : updates.name,
+    description:
+      updates.description === void 0 ? entry.description : updates.description,
+    source: updates.source === void 0 ? entry.source : updates.source,
+  };
+
+  index[entryIndex] = updatedEntry;
+  writeTrajectoryIndex(config, index);
+  return updatedEntry;
+}
+
 export function removeTrajectoryEntry(config: Config, id: string) {
   const normalized = normalizeTrajectoryId(id);
   const index = readTrajectoryIndex(config);

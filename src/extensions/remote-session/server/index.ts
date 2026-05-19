@@ -34,7 +34,7 @@ app.use(
     filter: () => true,
   }),
 );
-app.use(cors({ methods: ["GET", "PUT", "POST", "DELETE"] }));
+app.use(cors({ methods: ["GET", "PUT", "POST", "PATCH", "DELETE"] }));
 app.use(
   bodyParser.raw({ inflate: true, type: "application/zip", limit: "1gb" }),
 );
@@ -55,6 +55,8 @@ type TrajectoryEntry = Entry;
 type TrajectoryIndex = TrajectoryEntry[];
 
 type Index = SessionIndex | TrajectoryIndex | [];
+
+const AllowedId = /^[A-Za-z0-9._-]+$/;
 
 function createIndex(name: string) {
   const fn = path.join(Config.working_folder, `${name}_index.json`);
@@ -89,6 +91,34 @@ function mapPath(path: string) {
   return `/${Config.api_prefix}/${path}`;
 }
 
+function writeError(
+  res: express.Response,
+  status: number,
+  message: string,
+  code?: string,
+) {
+  res.status(status);
+  res.json({ errors: [{ code: code || "request", message }] });
+}
+
+function normalizeSessionId(id: string) {
+  const normalized = (id || "").trim();
+  if (!normalized) throw new Error("Session id must not be empty.");
+  if (
+    normalized.includes("/") ||
+    normalized.includes("\\") ||
+    normalized.includes("..")
+  )
+    throw new Error(
+      "Session id must not contain path separators or parent directory segments.",
+    );
+  if (!AllowedId.test(normalized))
+    throw new Error(
+      "Session id may only contain letters, numbers, dot, underscore, and hyphen.",
+    );
+  return normalized;
+}
+
 // SESSION
 
 function removeSession(id: string) {
@@ -99,7 +129,7 @@ function removeSession(id: string) {
       i++;
       continue;
     }
-    if (e.isSticky) return;
+    if (e.isSticky) return "sticky" as const;
     try {
       for (let j = i + 1; j < index.length; j++) {
         index[j - 1] = index[j];
@@ -112,8 +142,56 @@ function removeSession(id: string) {
         path.join(`${Config.working_folder}/session`, `${e.id}.molx`),
       );
     } catch {}
-    return;
+    return "removed" as const;
   }
+  return "missing" as const;
+}
+
+type UpdateSessionParams = {
+  id?: string;
+  name?: string;
+  description?: string;
+  source?: string;
+  version?: string;
+};
+
+function updateSession(id: string, updates: UpdateSessionParams) {
+  const normalized = normalizeSessionId(id);
+  const index = readIndex("session") as SessionIndex;
+  const entryIndex = index.findIndex((e) => e.id === normalized);
+  if (entryIndex < 0) return void 0;
+
+  const entry = index[entryIndex];
+  if (entry.isSticky)
+    throw new Error(
+      `Session '${normalized}' is sticky and cannot be modified.`,
+    );
+
+  const nextId =
+    updates.id === void 0 ? entry.id : normalizeSessionId(updates.id);
+  if (nextId !== entry.id && index.some((existing) => existing.id === nextId))
+    throw new Error(`Session '${nextId}' already exists.`);
+
+  if (nextId !== entry.id) {
+    fs.renameSync(
+      path.join(`${Config.working_folder}/session`, `${entry.id}.molx`),
+      path.join(`${Config.working_folder}/session`, `${nextId}.molx`),
+    );
+  }
+
+  const updatedEntry: SessionEntry = {
+    ...entry,
+    id: nextId,
+    name: updates.name === void 0 ? entry.name : updates.name,
+    description:
+      updates.description === void 0 ? entry.description : updates.description,
+    source: updates.source === void 0 ? entry.source : updates.source,
+    version: updates.version === void 0 ? entry.version : updates.version,
+  };
+
+  index[entryIndex] = updatedEntry;
+  writeIndex("session", index);
+  return updatedEntry;
 }
 
 function removeTrajectory(id: string) {
@@ -150,7 +228,9 @@ function sendIndex(res: express.Response, type: "session" | "trajectory") {
 }
 
 function sendSession(id: string, res: express.Response) {
-  if (id.length === 0 || id.indexOf(".") >= 0 || id.indexOf("/") >= 0 || id.indexOf("\\") >= 0) {
+  try {
+    id = normalizeSessionId(id);
+  } catch {
     res.status(404);
     res.end();
     return;
@@ -383,9 +463,71 @@ app.get(`${ApiRoot}/session/:id`, (req, res) => {
 });
 
 app.delete(`${ApiRoot}/session/:id`, (req, res) => {
-  removeSession((req.params.id as string) || "");
+  let id: string;
+  try {
+    id = normalizeSessionId((req.params.id as string) || "");
+  } catch (e) {
+    return writeError(
+      res,
+      400,
+      e instanceof Error ? e.message : "Invalid session id.",
+      "valid-id",
+    );
+  }
+
+  const result = removeSession(id);
+  if (result === "missing")
+    return writeError(
+      res,
+      404,
+      `Session '${id}' does not exist.`,
+      "missing-session",
+    );
+  if (result === "sticky")
+    return writeError(
+      res,
+      403,
+      `Session '${id}' is sticky and cannot be deleted.`,
+      "sticky-session",
+    );
   res.status(200);
   res.end();
+});
+
+app.patch(`${ApiRoot}/session/:id`, (req, res) => {
+  try {
+    const entry = updateSession((req.params.id as string) || "", {
+      id: req.body?.id as string | undefined,
+      name: req.body?.name as string | undefined,
+      description: req.body?.description as string | undefined,
+      source: req.body?.source as string | undefined,
+      version: req.body?.version as string | undefined,
+    });
+    if (!entry)
+      return writeError(
+        res,
+        404,
+        `Session '${req.params.id}' does not exist.`,
+        "missing-session",
+      );
+    res.json(entry);
+  } catch (e) {
+    const message =
+      e instanceof Error ? e.message : "Failed to update session.";
+    if (/sticky/i.test(message))
+      return writeError(res, 403, message, "sticky-session");
+    const status = /already exists/i.test(message)
+      ? 409
+      : /must|may only|separator|segment/i.test(message)
+        ? 400
+        : 500;
+    writeError(
+      res,
+      status,
+      message,
+      status === 409 ? "unique-session" : "update-session",
+    );
+  }
 });
 
 app.post(`${ApiRoot}/session`, (req, res) => {

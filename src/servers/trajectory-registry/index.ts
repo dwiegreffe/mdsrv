@@ -27,6 +27,7 @@ import {
   normalizeXtcFileName,
   readTrajectoryFile,
   removeTrajectoryEntry,
+  updateTrajectoryEntry,
 } from "./storage";
 import {
   getFrameRangeByIndexData,
@@ -47,7 +48,7 @@ app.use(
     filter: () => true,
   }),
 );
-app.use(cors({ methods: ["GET", "POST", "PUT", "DELETE"] }));
+app.use(cors({ methods: ["GET", "POST", "PUT", "PATCH", "DELETE"] }));
 app.use(bodyParser.json({ limit: "1mb" }));
 app.use(
   bodyParser.raw({
@@ -434,6 +435,55 @@ app.delete(mapPath(`${ApiRoot}/:id`), (req, res) => {
   res.locals.monitorMessage = `Removed trajectory '${id}'.`;
   res.status(200);
   res.end();
+});
+
+app.patch(mapPath(`${ApiRoot}/:id`), (req, res) => {
+  let id: string;
+  try {
+    id = normalizeTrajectoryId(req.params.id || "");
+  } catch (e) {
+    return writeError(
+      res,
+      400,
+      e instanceof Error ? e.message : "Invalid trajectory id.",
+      "valid-id",
+    );
+  }
+
+  try {
+    const entry = updateTrajectoryEntry(Config, id, {
+      id: req.body?.id as string | undefined,
+      name: req.body?.name as string | undefined,
+      description: req.body?.description as string | undefined,
+      source: req.body?.source as string | undefined,
+    });
+    if (!entry)
+      return writeError(
+        res,
+        404,
+        `Trajectory '${id}' does not exist.`,
+        "missing-trajectory",
+      );
+    res.locals.monitorMessage =
+      entry.id === id
+        ? `Updated trajectory '${id}'.`
+        : `Renamed trajectory '${id}' to '${entry.id}'.`;
+    res.json(entry);
+  } catch (e) {
+    const message =
+      e instanceof Error ? e.message : "Failed to update trajectory.";
+    const status = /already exists/i.test(message)
+      ? 409
+      : /must|may only|separator|segment/i.test(message)
+        ? 400
+        : 500;
+    writeError(
+      res,
+      status,
+      message,
+      status === 409 ? "unique-trajectory" : "update-trajectory",
+    );
+  }
 });
 
 app.get(mapPath(`${ApiRoot}/:id/starts`), async (req, res) => {

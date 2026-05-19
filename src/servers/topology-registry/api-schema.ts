@@ -165,6 +165,60 @@ export function getSchema(config: Config) {
             },
           },
         },
+        patch: {
+          tags: ["Topology"],
+          summary:
+            "Updates topology metadata and optionally renames its id/file.",
+          operationId: "updateTopology",
+          parameters: [
+            {
+              name: "id",
+              in: "path",
+              description: "Current topology id.",
+              required: true,
+              schema: { type: "string" },
+              style: "simple",
+            },
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    id: {
+                      type: "string",
+                      description:
+                        "Optional new id. If provided, the .pdb file is renamed.",
+                    },
+                    name: { type: "string", description: "Display name." },
+                    description: { type: "string" },
+                    source: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            200: {
+              description: "Topology updated.",
+              content: { "application/json": {} },
+            },
+            400: {
+              description: "Invalid request.",
+              content: { "application/json": {} },
+            },
+            404: {
+              description: "Topology not found.",
+              content: { "application/json": {} },
+            },
+            409: {
+              description: "Target topology id or file name already exists.",
+              content: { "application/json": {} },
+            },
+          },
+        },
         delete: {
           tags: ["Topology"],
           summary: "Removes a stored topology entry and its PDB file.",

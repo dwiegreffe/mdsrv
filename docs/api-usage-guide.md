@@ -31,18 +31,26 @@ Main API namespaces:
 
 ### 1. Session API
 
-Use this API to upload, list, download, and delete Mol\* session archives.
+Use this API to upload, list, download, rename, update, and delete Mol\* session archives.
+
+Sessions support two rename/update modes:
+
+- display rename: send `PATCH /api/v1/session/:id` with `name` only; the id and download URL stay unchanged
+- identity rename: include a new `id`; the stored `.molx` file is renamed and future requests must use the new id
 
 Endpoints:
 
 - `GET /api/v1/session`
 - `POST /api/v1/session`
 - `GET /api/v1/session/:id`
+- `PATCH /api/v1/session/:id`
 - `DELETE /api/v1/session/:id`
 
 ### 2. Trajectory API
 
-Use this API to list trajectories, register a trajectory by remote URL, access cached frame offsets, stream individual frames, stream frame ranges, and delete trajectories.
+Use this API to list trajectories, register a trajectory by remote URL, access cached frame offsets, stream individual frames, stream frame ranges, rename/update trajectories, and delete trajectories.
+
+Trajectories support display rename via `name` and identity rename via `id`. Identity rename changes the trajectory id, renames the stored `.xtc` file, and also renames the cached frame-start index if it exists.
 
 Endpoints:
 
@@ -50,6 +58,7 @@ Endpoints:
 - `POST /api/v1/trajectory`
 - `PUT /api/v1/trajectory/:id`
 - `GET /api/v1/trajectory/:id`
+- `PATCH /api/v1/trajectory/:id`
 - `DELETE /api/v1/trajectory/:id`
 - `GET /api/v1/trajectory/:id/starts`
 - `GET /api/v1/trajectory/:id/frame/offset/:start/:end`
@@ -60,7 +69,9 @@ Endpoints:
 
 ### 3. Topology API
 
-Use this API to list, register, fetch, and delete stored PDB topology files.
+Use this API to list, register, fetch, rename/update, and delete stored PDB topology files.
+
+Topologies support display rename via `name` and identity rename via `id`. Identity rename changes the topology id and renames the stored `.pdb` file.
 
 Endpoints:
 
@@ -68,6 +79,7 @@ Endpoints:
 - `POST /api/v1/topology`
 - `PUT /api/v1/topology/:id`
 - `GET /api/v1/topology/:id`
+- `PATCH /api/v1/topology/:id`
 - `DELETE /api/v1/topology/:id`
 
 ### 4. YAML API
@@ -171,11 +183,41 @@ curl -i -X POST "http://127.0.0.1:1337/api/v1/session?name=my-session&version=mo
 curl -OJ "http://127.0.0.1:1337/api/v1/session/<session-id>"
 ```
 
+## Rename or update a session
+
+Use `PATCH` for both display metadata updates and identity rename.
+
+Display rename keeps the session id and URL stable:
+
+```bash
+curl -i -X PATCH "http://127.0.0.1:1337/api/v1/session/<session-id>" \
+  -H "Content-Type: application/json" \
+  --data '{
+    "name": "Analysis session v2",
+    "description": "Updated user-facing description"
+  }'
+```
+
+Identity rename changes the id and renames the stored `.molx` file:
+
+```bash
+curl -i -X PATCH "http://127.0.0.1:1337/api/v1/session/<session-id>" \
+  -H "Content-Type: application/json" \
+  --data '{
+    "id": "session-v2",
+    "name": "Analysis session v2"
+  }'
+```
+
+After identity rename, use `/api/v1/session/session-v2` for download, update, or delete. Sticky sessions return `403 Forbidden` and cannot be modified.
+
 ## Delete a session
 
 ```bash
 curl -i -X DELETE "http://127.0.0.1:1337/api/v1/session/<session-id>"
 ```
+
+Deleting a sticky session returns `403 Forbidden`. Deleting a missing session returns `404 Not Found`.
 
 ## List trajectories
 
@@ -211,6 +253,32 @@ curl -i -X PUT "http://127.0.0.1:1337/api/v1/trajectory/traj-001?name=traj-001&f
 ```bash
 curl -OJ "http://127.0.0.1:1337/api/v1/trajectory/traj-001"
 ```
+
+## Rename or update a trajectory
+
+Display rename keeps the trajectory id and all frame URLs stable:
+
+```bash
+curl -i -X PATCH "http://127.0.0.1:1337/api/v1/trajectory/traj-001" \
+  -H "Content-Type: application/json" \
+  --data '{
+    "name": "Production trajectory",
+    "description": "100 ns production run"
+  }'
+```
+
+Identity rename changes the id, renames the stored `.xtc` file, and renames the cached frame-start index if present:
+
+```bash
+curl -i -X PATCH "http://127.0.0.1:1337/api/v1/trajectory/traj-001" \
+  -H "Content-Type: application/json" \
+  --data '{
+    "id": "prod-100ns",
+    "name": "Production trajectory"
+  }'
+```
+
+After identity rename, use `/api/v1/trajectory/prod-100ns` and update any YAML/session references that pointed at the old trajectory id.
 
 ## Get trajectory frame starts
 
@@ -308,6 +376,32 @@ curl -i -X PUT "http://127.0.0.1:1337/api/v1/topology/1cbs?name=1CBS&fileName=1c
 curl http://127.0.0.1:1337/api/v1/topology/1cbs
 ```
 
+## Rename or update a topology
+
+Display rename keeps the topology id and URL stable:
+
+```bash
+curl -i -X PATCH "http://127.0.0.1:1337/api/v1/topology/1cbs" \
+  -H "Content-Type: application/json" \
+  --data '{
+    "name": "1CBS reference topology",
+    "description": "Updated display metadata"
+  }'
+```
+
+Identity rename changes the id and renames the stored `.pdb` file:
+
+```bash
+curl -i -X PATCH "http://127.0.0.1:1337/api/v1/topology/1cbs" \
+  -H "Content-Type: application/json" \
+  --data '{
+    "id": "1cbs-reference",
+    "name": "1CBS reference topology"
+  }'
+```
+
+After identity rename, use `/api/v1/topology/1cbs-reference` and update any YAML/session references that pointed at the old topology id.
+
 ## Delete a topology
 
 ```bash
@@ -366,6 +460,8 @@ Typical status codes:
 - `404` not found
 - `409` conflict, for example duplicate file name
 
+Session, trajectory, and topology `PATCH` requests return the updated entry as JSON. For identity rename, `409 Conflict` means the requested target id or generated file name already exists.
+
 For external apps, treat `400`, `404`, and `409` as expected business/API errors and display the server-provided message to the user where appropriate.
 
 ## Recommended client behavior
@@ -382,9 +478,9 @@ For external apps, treat `400`, `404`, and `409` as expected business/API errors
 1. call `/health`
 2. load `/api/v1/openapi.json` or inspect `/docs`
 3. integrate YAML list/create/update/read/delete if you need editable config files
-4. integrate session upload/download if you need Mol\* session persistence
-5. integrate topology registration if you need modular structure-file storage
-6. integrate trajectory registration and frame access if you need streaming support
+4. integrate session upload/download, display rename, and delete if you need Mol\* session persistence
+5. integrate topology registration, display rename, delete, and optional identity rename if you need modular structure-file storage
+6. integrate trajectory registration, display rename, delete, frame access, and optional identity rename if you need streaming support
 
 ## Related docs
 

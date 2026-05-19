@@ -229,6 +229,60 @@ export function getSchema(config: Config) {
             },
           },
         },
+        patch: {
+          tags: ["Trajectory"],
+          summary:
+            "Updates trajectory metadata and optionally renames its id/file.",
+          operationId: "updateTrajectory",
+          parameters: [
+            {
+              name: "id",
+              in: "path",
+              description: "Current trajectory id.",
+              required: true,
+              schema: { type: "string" },
+              style: "simple",
+            },
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    id: {
+                      type: "string",
+                      description:
+                        "Optional new id. If provided, the .xtc file and cached frame-start index are renamed.",
+                    },
+                    name: { type: "string", description: "Display name." },
+                    description: { type: "string" },
+                    source: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            200: {
+              description: "Trajectory updated.",
+              content: { "application/json": {} },
+            },
+            400: {
+              description: "Invalid request.",
+              content: { "application/json": {} },
+            },
+            404: {
+              description: "Trajectory not found.",
+              content: { "application/json": {} },
+            },
+            409: {
+              description: "Target trajectory id or file name already exists.",
+              content: { "application/json": {} },
+            },
+          },
+        },
         delete: {
           tags: ["Trajectory"],
           summary: "Removes the trajectory with the given id.",

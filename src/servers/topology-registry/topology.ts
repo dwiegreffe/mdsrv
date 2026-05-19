@@ -109,6 +109,61 @@ export function createTopologyEntry(
   return createdEntry;
 }
 
+export type UpdateTopologyEntryParams = {
+  id?: string;
+  name?: string;
+  description?: string;
+  source?: string;
+};
+
+export function updateTopologyEntry(
+  config: Config,
+  id: string,
+  updates: UpdateTopologyEntryParams,
+) {
+  const normalized = normalizeTopologyId(id);
+  const index = readTopologyIndex(config);
+  const entryIndex = index.findIndex((existing) => existing.id === normalized);
+  if (entryIndex < 0) return void 0;
+
+  const entry = index[entryIndex];
+  const nextId =
+    updates.id === void 0 ? entry.id : normalizeTopologyId(updates.id);
+  const nextFileName =
+    nextId === entry.id
+      ? entry.fileName
+      : normalizePdbFileName(`${nextId}.pdb`);
+
+  if (nextId !== entry.id && index.some((existing) => existing.id === nextId))
+    throw new Error(`Topology '${nextId}' already exists.`);
+  if (
+    nextFileName !== entry.fileName &&
+    index.some((existing) => existing.fileName === nextFileName)
+  )
+    throw new Error(`Topology file '${nextFileName}' already exists.`);
+
+  if (nextFileName !== entry.fileName) {
+    fs.renameSync(
+      getTopologyFilePath(config, entry.fileName),
+      getTopologyFilePath(config, nextFileName),
+    );
+  }
+
+  const updatedEntry: TopologyEntry = {
+    ...entry,
+    id: nextId,
+    fileName: nextFileName,
+    name: updates.name === void 0 ? entry.name : updates.name,
+    description:
+      updates.description === void 0 ? entry.description : updates.description,
+    source: updates.source === void 0 ? entry.source : updates.source,
+  };
+
+  index[entryIndex] = updatedEntry;
+  writeTopologyIndex(config, index);
+  return updatedEntry;
+}
+
 export function removeTopologyEntry(config: Config, id: string) {
   const normalized = normalizeTopologyId(id);
   const index = readTopologyIndex(config);

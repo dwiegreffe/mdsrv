@@ -17,6 +17,7 @@ import {
   normalizeTopologyId,
   readTopologyFile,
   removeTopologyEntry,
+  updateTopologyEntry,
 } from "./topology";
 import { getSchema, shortcutIconLink } from "./api-schema";
 
@@ -32,7 +33,7 @@ app.use(
     filter: () => true,
   }),
 );
-app.use(cors({ methods: ["GET", "POST", "PUT", "DELETE"] }));
+app.use(cors({ methods: ["GET", "POST", "PUT", "PATCH", "DELETE"] }));
 app.use(bodyParser.json({ limit: "1mb" }));
 app.use(
   bodyParser.text({
@@ -245,6 +246,51 @@ app.delete(mapPath(`${ApiRoot}/:id`), (req, res) => {
     );
   res.status(200);
   res.end();
+});
+
+app.patch(mapPath(`${ApiRoot}/:id`), (req, res) => {
+  let id: string;
+  try {
+    id = normalizeTopologyId(req.params.id || "");
+  } catch (e) {
+    return writeError(
+      res,
+      400,
+      e instanceof Error ? e.message : "Invalid topology id.",
+      "valid-id",
+    );
+  }
+
+  try {
+    const entry = updateTopologyEntry(Config, id, {
+      id: req.body?.id as string | undefined,
+      name: req.body?.name as string | undefined,
+      description: req.body?.description as string | undefined,
+      source: req.body?.source as string | undefined,
+    });
+    if (!entry)
+      return writeError(
+        res,
+        404,
+        `Topology '${id}' does not exist.`,
+        "missing-topology",
+      );
+    res.json(entry);
+  } catch (e) {
+    const message =
+      e instanceof Error ? e.message : "Failed to update topology.";
+    const status = /already exists/i.test(message)
+      ? 409
+      : /must|may only|separator|segment/i.test(message)
+        ? 400
+        : 500;
+    writeError(
+      res,
+      status,
+      message,
+      status === 409 ? "unique-topology" : "update-topology",
+    );
+  }
 });
 
 const schema = getSchema(Config);

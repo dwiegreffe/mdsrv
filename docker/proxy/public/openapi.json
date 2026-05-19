@@ -93,7 +93,54 @@
             "schema": { "type": "string" }
           }
         ],
-        "responses": { "200": { "description": "Deleted" } }
+        "responses": {
+          "200": { "description": "Deleted" },
+          "400": { "description": "Invalid session id" },
+          "403": { "description": "Sticky session cannot be deleted" },
+          "404": { "description": "Missing session" }
+        }
+      },
+      "patch": {
+        "tags": ["Session"],
+        "summary": "Update session metadata and optionally rename its id/file",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Optional new id. If provided, the .molx file is renamed."
+                  },
+                  "name": { "type": "string", "description": "Display name." },
+                  "description": { "type": "string" },
+                  "source": { "type": "string" },
+                  "version": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated",
+            "content": { "application/json": {} }
+          },
+          "400": { "description": "Invalid request" },
+          "403": { "description": "Sticky session cannot be modified" },
+          "404": { "description": "Missing session" },
+          "409": { "description": "Target id exists" }
+        }
       }
     },
     "/api/v1/trajectory": {
@@ -256,6 +303,46 @@
           "400": { "description": "Invalid request" },
           "409": { "description": "Id or file already exists" },
           "413": { "description": "Upload exceeds configured limit" }
+        }
+      },
+      "patch": {
+        "tags": ["Trajectory"],
+        "summary": "Update trajectory metadata and optionally rename its id/file",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Optional new id. If provided, the .xtc file and cached frame-start index are renamed."
+                  },
+                  "name": { "type": "string", "description": "Display name." },
+                  "description": { "type": "string" },
+                  "source": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated",
+            "content": { "application/json": {} }
+          },
+          "400": { "description": "Invalid request" },
+          "404": { "description": "Missing trajectory" },
+          "409": { "description": "Target id or file exists" }
         }
       },
       "delete": {
@@ -488,6 +575,46 @@
             "description": "PDB content",
             "content": { "chemical/x-pdb": {} }
           }
+        }
+      },
+      "patch": {
+        "tags": ["Topology"],
+        "summary": "Update topology metadata and optionally rename its id/file",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Optional new id. If provided, the .pdb file is renamed."
+                  },
+                  "name": { "type": "string", "description": "Display name." },
+                  "description": { "type": "string" },
+                  "source": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated",
+            "content": { "application/json": {} }
+          },
+          "400": { "description": "Invalid request" },
+          "404": { "description": "Missing topology" },
+          "409": { "description": "Target id or file exists" }
         }
       },
       "delete": {
