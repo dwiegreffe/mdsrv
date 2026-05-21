@@ -1,25 +1,23 @@
 # Common Server Utilities
 
 ## Summary
-- This directory contains shared helpers used by multiple server modules.
-- It exists to avoid repeating small HTTP and filesystem utilities across servers.
-- `model`, `volume`, `plugin-state`, and `yml-server` depend on pieces from here.
-- The main extension point is adding narrowly scoped helpers that are genuinely shared.
+- Contains shared helpers for backend HTTP services.
+- Exists to avoid duplicating generic API documentation wiring.
+- Used by backend services that expose Swagger UI pages.
+- The main extension point is narrowly scoped code with clear cross-service value.
 
 ## What
-- Holds cross-server utilities rather than runnable services.
-- Includes HTTP-facing support such as Swagger UI wiring.
-- Includes low-level helpers such as file-handle wrappers and general utility functions.
-- Does not own any server-specific business rules.
+- Holds reusable server support code rather than runnable services.
+- Provides shared Swagger UI handlers and templates.
+- Does not own persistence, validation, or API-specific business rules.
 
 ## Why
-- Shared infrastructure code is easier to maintain in one place than copied across servers.
-- These helpers support consistent docs exposure and common request/response behavior.
-- The directory is intentionally small so it stays a dependency layer, not a dumping ground.
+- Shared docs setup should behave consistently across backend services.
+- Keeping common code small prevents hidden coupling between service domains.
+- Service-specific behavior remains easier to reason about when it stays local.
 
 ## How
-- **Use:** Import from here when the same helper is needed in more than one server tree.
-- **Extend:** Add only generic utilities with clear cross-server value.
-- **Extend:** Prefer small focused modules over one broad helper file.
-- **Integrate:** Keep server-specific rules in their own server directories even if they also touch HTTP or files.
-- **Watch out:** If a helper only serves one server, keep it local to that server instead of growing `common`.
+- **Use:** import from here only when a helper is needed by multiple services.
+- **Extend:** prefer focused modules over broad utility buckets.
+- **Integrate:** keep service routes and schemas in the owning service directory.
+- **Watch out:** if a helper serves only one service, keep it local instead.

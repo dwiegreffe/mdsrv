@@ -1,25 +1,24 @@
 # Swagger UI Integration
 
 ## Summary
-- This directory provides the shared Swagger UI handlers used by HTTP servers in this repository.
-- It exists so each server can expose docs without duplicating HTML/template wiring.
-- `model`, `volume`, `plugin-state`, and `yml-server` use it for API docs pages.
-- The entrypoints are `swaggerUiAssetsHandler` and `swaggerUiIndexHandler`.
+- Provides shared Swagger UI handlers for backend services.
+- Exists so services can expose docs without duplicating HTML/template setup.
+- Entry points are `swaggerUiAssetsHandler` and `swaggerUiIndexHandler`.
+- API schemas remain owned by each service.
 
 ## What
 - Wraps `swagger-ui-dist` asset serving.
-- Generates the HTML index page from a small template and options object.
-- Centralizes the contract for title, OpenAPI URL, API prefix, and favicon handling.
-- Does not build schemas or define routes for any specific API.
+- Generates a small docs index page from service-specific options.
+- Centralizes title, OpenAPI URL, API prefix, and favicon handling.
+- Does not define routes or schemas for any concrete API.
 
 ## Why
-- Swagger setup is repetitive but not domain-specific.
-- Keeping it shared makes docs behavior consistent across servers.
-- The template-based approach keeps each server focused on its own schema and routes.
+- Swagger UI setup is repetitive but not domain-specific.
+- Shared handlers keep docs behavior consistent.
+- Template-based wiring lets services focus on their own schema and routes.
 
 ## How
-- **Use:** Mount `swaggerUiAssetsHandler()` for static assets and `swaggerUiIndexHandler(...)` for the docs page.
-- **Use:** Pass the server-specific OpenAPI JSON URL and title from the owning server.
-- **Extend:** Change the shared template here when all server docs should change together.
-- **Extend:** Keep API-specific schema generation outside this directory.
-- **Watch out:** This directory serves the UI shell only; broken docs routes usually come from bad OpenAPI paths upstream.
+- **Use:** mount `swaggerUiAssetsHandler()` for assets.
+- **Use:** mount `swaggerUiIndexHandler(...)` for the docs page.
+- **Extend:** change the shared template only when all service docs should change together.
+- **Watch out:** broken docs usually come from bad OpenAPI paths or routes in the owning service.

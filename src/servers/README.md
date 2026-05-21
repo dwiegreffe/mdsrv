@@ -1,32 +1,26 @@
-# Servers
+# Backend Services
 
 ## Summary
-- This tree contains the server-side runtimes, CLIs, and shared helpers that ship with this repository.
-- It exists to expose Mol* data through HTTP APIs and local batch tooling.
-- The main server families here are `model`, `volume`, `plugin-state`, `yml-server`, `trajectory-registry`, and `topology-registry`.
-- Shared HTTP/docs helpers live in `common`.
-- The current Docker stack also includes the remote-session service, but its source lives in `src/extensions/remote-session/server`, not here.
+- Contains the backend service source deployed by Docker Compose.
+- Exposes storage-oriented HTTP APIs for YAML files, trajectories, and topologies.
+- Shared API documentation helpers live in `common`.
+- The remote-session service lives under `src/extensions/remote-session/server`.
+- Legacy model, volume, plugin-state, and frontend server code are intentionally removed.
 
 ## What
-- `model` serves structure queries and local/batch preprocessing tools.
-- `volume` serves density/volume queries and packer/query CLIs for the custom volume format.
-- `plugin-state` is a small file-backed state storage server.
-- `yml-server` is a small file-backed YAML CRUD API with validation.
-- `trajectory-registry` is a small file-backed XTC registry and frame streaming service.
-- `topology-registry` is a small file-backed PDB registry service.
-- `common` holds reusable server helpers used across multiple server modules.
-- This tree does not contain the reverse proxy or container orchestration files; those live under `docker/` and the repository root.
+- Owns Express services that are compiled into `lib/commonjs` for runtime images.
+- Keeps service-specific validation, persistence, and OpenAPI schema definitions near each service.
+- Shares only generic HTTP/docs helpers through `common`.
+- Does not contain the Nginx proxy, Docker orchestration, or browser viewer code.
 
 ## Why
-- The codebase has multiple server-style runtimes with different scopes but similar operational needs.
-- Keeping them under one top-level tree makes shared HTTP patterns and data-serving code easier to find.
-- The split between `model`, `volume`, and the smaller file-backed services keeps domain-heavy logic separate.
-- The Docker deployment intentionally exposes only part of this tree today, so the source layout must stay explicit about what is reusable versus what is deployed.
+- Keeps the deployed backend small and easy to audit.
+- Avoids carrying unused Mol* server families that are not part of the current Docker stack.
+- Maintains clear service boundaries while still sharing repetitive Swagger UI wiring.
 
 ## How
-- **Use:** Start from each server's entrypoint (`server.ts`, `index.ts`, `pack.ts`, `query.ts`, or `preprocess.ts`) depending on whether you need an HTTP service or a CLI.
-- **Use:** For the current containerized setup, `mdsrv-proxy` is the public entrypoint, `mdsrv-remote-session` serves sessions, `mdsrv-trajectory-registry` serves modular XTC streaming, `mdsrv-topology-registry` serves modular PDB registry endpoints, and `mdsrv-yml-server` serves YAML files.
-- **Use:** `model` and `volume` are the larger domain servers; `plugin-state`, `yml-server`, `trajectory-registry`, and `topology-registry` are smaller storage-oriented services.
-- **Extend:** Put shared HTTP or Swagger helpers into `common` instead of duplicating them in each server.
-- **Extend:** Keep runnable entrypoints thin and move domain logic into focused subdirectories.
-- **Watch out:** Not every deployed server lives under `src/servers`; document cross-tree runtime wiring when changing Docker or proxy behavior.
+- **Use:** run services through `docker compose up --build` from the repository root.
+- **Use:** access them through the proxy under `/api/v1/yaml`, `/api/v1/trajectory`, and `/api/v1/topology`.
+- **Extend:** add backend-only code inside the owning service directory.
+- **Extend:** put cross-service docs/HTTP glue in `common`, not domain behavior.
+- **Integrate:** update `tsconfig.commonjs.json`, `docker/server/Dockerfile`, and `docker/proxy/nginx.conf.template` when a new service is added.

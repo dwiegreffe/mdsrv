@@ -4,7 +4,7 @@
  * @author David Sehnal <david.sehnal@gmail.com>
  * @author Michelle Kampfrath <kampfrath@informatik.uni-leipzig.de>
  *
- * adapted from /src/servers/plugin-state/config.ts
+ * adapted from the original Mol* state server config.
  */
 
 import * as argparse from 'argparse';

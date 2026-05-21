@@ -4,7 +4,7 @@
  * @author David Sehnal <david.sehnal@gmail.com>
  * @author Michelle Kampfrath <kampfrath@informatik.uni-leipzig.de>
  *
- * parts adapted from /src/servers/plugin-state/index.ts
+ * parts adapted from the original Mol* state server.
  */
 
 import express from "express";
@@ -26,6 +26,18 @@ const Config = getConfig();
 const ApiRoot = "/api/v1";
 
 const app = express();
+app.use((req, res, next) => {
+  const started = Date.now();
+  console.log(`[ACCESS] ${req.method} ${req.originalUrl}`);
+  res.on("finish", () => {
+    console.log(
+      `[ACCESS] ${req.method} ${req.originalUrl} ${res.statusCode} ${
+        Date.now() - started
+      }ms`,
+    );
+  });
+  next();
+});
 app.use(
   compression(<any>{
     level: 6,

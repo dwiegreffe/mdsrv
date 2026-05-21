@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "declaration": true,
-        "target": "es5",
+        "target": "es2019",
         "alwaysStrict": true,
         "noImplicitAny": true,
         "noImplicitThis": true,
@@ -15,10 +15,17 @@
         "importHelpers": true,
         "noEmitHelpers": true,
         "allowSyntheticDefaultImports": true,
-        "jsx": "react-jsx",
-        "lib": [ "es6", "dom", "esnext.asynciterable", "es2016" ],
+        "lib": ["es2019", "dom", "esnext.asynciterable"],
         "rootDir": "src",
         "outDir": "lib/commonjs"
     },
-    "include": [ "src/**/*" ]
+    "include": [
+        "src/extensions/remote-session/server/**/*.ts",
+        "src/servers/common/swagger-ui/**/*.ts",
+        "src/servers/yml-server/**/*.ts",
+        "src/servers/trajectory-registry/**/*.ts",
+        "src/servers/topology-registry/**/*.ts",
+        "src/mol-util/make-dir.ts",
+        "src/mol-util/string.ts"
+    ]
 }

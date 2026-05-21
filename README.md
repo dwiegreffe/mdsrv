@@ -1,179 +1,37 @@
-# MDsrv
+# MDsrv Backend
 
-## Introduction
+## Summary
+- Backend-only MDsrv API services for storing sessions, topologies, trajectories, and YAML metadata.
+- The Mol* viewer/frontend and legacy Mol* model/volume servers are intentionally out of scope.
+- Docker Compose is the primary runtime entrypoint.
+- External clients use the unified proxy on port `1337`.
+- New backend behavior should be added as a focused service or route behind the proxy.
 
-MDsrv is a web tool for interactive and remote exploration of trajectories. Interactive visualization of MD trajectories provides an instant, transparent, and intuitive understanding of complex dynamics, while sharing of MD trajectories may generate transparency and trust, allowing collaboration, knowledge exchange, and data reuse.
-## Install via docker
+## What
+- Provides four Node/Express services: remote sessions, topology registry, trajectory registry, and YAML storage.
+- Exposes a single public API surface through the Nginx proxy at `/api/v1/*` plus `/docs`.
+- Stores runtime data in `docker/data/*` host-mounted directories.
+- Builds TypeScript backend sources into CommonJS output for Docker runtime images.
+- Does not ship a browser viewer, WebGL renderer, webpack build, or Mol* model/volume server binaries.
 
-Checkout repo.
+## Why
+- Keeps this repository focused on the deployed Docker backend that is actually used.
+- Reduces build time, dependency surface, and maintenance work by removing unused frontend/shared Mol* code.
+- Accepts a breaking cleanup because the project is pre-release and legacy behavior is not preserved.
+- Keeps service boundaries explicit: each backend service owns its own storage and API schema.
 
-### Build and run servers
+## How
+- **Run:** start the backend stack with `docker compose up --build`.
+- **Run detached:** use `docker compose up --build -d`; stop it with `docker compose down`.
+- **Use:** open API docs at `http://127.0.0.1:1337/docs`.
+- **Use:** call `/api/v1/session`, `/api/v1/topology`, `/api/v1/trajectory`, and `/api/v1/yaml` through the proxy.
+- **Build locally:** run `npm install` and `npm run build-tsc`.
+- **Extend:** add service code under `src/servers/*` or `src/extensions/remote-session/server`, then include it in `tsconfig.commonjs.json`.
+- **Integrate:** update `docker/server/Dockerfile`, `docker-compose.yml`, and `docker/proxy/nginx.conf.template` when adding a new service.
+- **Watch out:** generated output (`lib/`) and runtime data (`docker/data/`) are not source of truth.
 
-This setup uses one shared multi-stage app Dockerfile and one shared Docker Compose file for both ARM64 and AMD64.
+Additional operational docs:
 
-#### Docker Compose (recommended)
-
-This starts separate services with separate host data directories:
-
-- API docs on `http://127.0.0.1:1337/docs`
-- remote session API under `http://127.0.0.1:1337/api/v1/session`
-- modular trajectory registry / XTC streaming under `http://127.0.0.1:1337/api/v1/trajectory`
-- modular topology registry under `http://127.0.0.1:1337/api/v1/topology`
-- YAML file API under `http://127.0.0.1:1337/api/v1/yaml`
-
-Internally this uses five containers:
-
-- `mdsrv-remote-session`
-- `mdsrv-trajectory-registry`
-- `mdsrv-topology-registry`
-- `mdsrv-yml-server`
-- `mdsrv-proxy`
-
-Both are reachable through the same host IP and the same external port from outside Docker.
-
-Build and start:
-
-```bash
-docker compose up --build
-```
-
-Run in background:
-
-```bash
-docker compose up --build -d
-```
-
-Rebuild and restart the active Docker setup with the helper script:
-
-```bash
-bash scripts/rebuild-restart-docker.sh
-```
-
-Stop:
-
-```bash
-docker compose down
-```
-
-The split host data directories are:
-
-- `docker/data/remote-session/`
-- `docker/data/trajectory-registry/`
-- `docker/data/topology-registry/`
-- `docker/data/yml/`
-
-Both services are reachable through the same host IP and the same external port from outside Docker:
-
-- `<host-ip>:1337/docs` for API docs
-- `<host-ip>:1337/api/v1/session` for session endpoints
-- `<host-ip>:1337/api/v1/trajectory` for trajectory endpoints
-- `<host-ip>:1337/api/v1/topology` for topology endpoints
-- `<host-ip>:1337/api/v1/yaml` for the YAML API
-
-Direct file uploads are supported for the modular registries:
-
-- `PUT /api/v1/topology/:id` for raw `.pdb` uploads
-- `PUT /api/v1/trajectory/:id` for raw `.xtc` uploads
-
-#### Build minimized runtime images directly
-
-Build the remote-session runtime image:
-
-```bash
-docker build --target remote-session-runtime -f docker/server/Dockerfile -t mdsrv-remote-session .
-```
-
-Build the YAML server runtime image:
-
-```bash
-docker build --target yml-server-runtime -f docker/server/Dockerfile -t mdsrv-yml-server .
-```
-
-Build the trajectory registry runtime image:
-
-```bash
-docker build --target trajectory-registry-runtime -f docker/server/Dockerfile -t mdsrv-trajectory-registry .
-```
-
-Build the topology registry runtime image:
-
-```bash
-docker build --target topology-registry-runtime -f docker/server/Dockerfile -t mdsrv-topology-registry .
-```
-
-### Build and run viewer
-
-From project root:
-
-```bash
-docker build --no-cache -t proteinvis/mdsrv-viewer ./docker/viewer
-docker run --rm -p 80:4242 proteinvis/mdsrv-viewer http://host.docker.internal:1337
-```
-
-Open the viewer at `http://127.0.0.1`.
-
-### Docker quick commands (compact)
-
-```bash
-# running containers
-docker ps
-
-# logs
-docker logs <container>
-docker logs -f <container>
-docker logs --tail 100 <container>
-docker logs --since 10m <container>
-docker logs -t <container>
-
-# stop container
-docker stop <container>
-```
-
-## Docker Compose
-
-For the split setup with separate containers and separate host data directories:
-
-- unified API docs on `/docs`
-- session API on `/api/v1/session`
-- trajectory API on `/api/v1/trajectory`
-- topology API on `/api/v1/topology`
-- YAML API on `/api/v1/yaml`
-
-see [docs/docker-compose.md](docs/docker-compose.md).
-
-Standalone YAML server endpoint and storage details are documented in [docs/yml-server.md](docs/yml-server.md).
-
-The modular deployment and proxy wiring are documented in [docs/docker-compose.md](docs/docker-compose.md).
-
-For external app developers, see the unified backend handoff guide: [docs/api-usage-guide.md](docs/api-usage-guide.md).
-
-## Git remotes and branch strategy (mdsrv-anno)
-
-This repository is now set up with a dedicated `anno/*` branch namespace so work on the annotation-focused version does not interfere with other active branches.
-
-### Remote naming
-
-- `origin`: canonical remote for this project (`mdsrv-anno` on GitLab)
-- `fork-source`: original upstream fork source (former `origin`, GitHub)
-
-Why this naming:
-
-- `origin` stays the default target for day-to-day pushes and PRs for this project.
-- `fork-source` makes it explicit where this codebase was forked from.
-
-### Branch naming
-
-- `anno/develop`: integration branch for ongoing annotation-focused development
-- `anno/feature/<ticket>-<short-name>`: short-lived feature branches
-- `anno/release/vX.Y`: release preparation branch
-- `anno/stable/vX.Y`: stable maintenance branch for patch-level fixes
-- `anno/hotfix/vX.Y.Z-<short-name>`: urgent production fixes
-
-Recommended examples:
-
-- `anno/feature/MD-142-special-yml-support`
-- `anno/release/v2.4`
-- `anno/stable/v2.4`
-- `anno/hotfix/v2.4.1-yml-null-fix`
-
-Use tags instead of a moving `latest` branch, e.g. `anno-v2.4.0`.
+- Docker Compose: [docs/docker-compose.md](docs/docker-compose.md)
+- API usage guide: [docs/api-usage-guide.md](docs/api-usage-guide.md)
+- YAML server: [docs/yml-server.md](docs/yml-server.md)

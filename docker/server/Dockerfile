@@ -9,8 +9,7 @@ RUN npm install
 
 COPY . .
 
-RUN NODE_ENV=production npm run build-tsc \
-    && node docker/server/inject-request-logs.js /app/lib/commonjs/extensions/remote-session/server/index.js
+RUN NODE_ENV=production npm run build-tsc
 
 
 FROM node:16-alpine AS remote-session-runtime
